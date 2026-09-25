@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Search, CheckCircle2, ShieldCheck, ArrowRight, X, AlertCircle, Mountain, Calendar, Users, LogOut } from 'lucide-react';
 import { TripSummary, MemberIdentity } from '../types';
+import { apiPath } from '../utils/apiBase';
 
 interface MemberLoginModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ export const MemberLoginModal: React.FC<MemberLoginModalProps> = ({
         params.append('name', clean);
       }
 
-      const res = await fetch(`/api/trips?${params.toString()}`);
+      const res = await fetch(apiPath(`/api/trips?${params.toString()}`));
       const data = await res.json();
 
       if (data.success && Array.isArray(data.trips)) {

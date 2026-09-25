@@ -1,0 +1,10 @@
+# Assets to ignore when deploying to Cloudflare
+.git
+node_modules
+*.map
+worker
+functions
+scripts
+server.ts
+serverTrips.ts
+data

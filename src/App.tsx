@@ -9,6 +9,7 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { TripSelectorModal } from './components/TripSelectorModal';
 import { MemberLoginModal } from './components/MemberLoginModal';
 import { CreateTripModal } from './components/CreateTripModal';
+import { apiPath } from './utils/apiBase';
 import { 
   ShieldCheck, 
   Mountain, 
@@ -119,7 +120,7 @@ export default function App() {
   // 1. Fetch available trips list
   const fetchTripsList = useCallback(async () => {
     try {
-      const res = await fetch('/api/trips', {
+      const res = await fetch(apiPath('/api/trips'), {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
@@ -139,7 +140,7 @@ export default function App() {
     setAccessDeniedError(null);
 
     try {
-      const res = await fetch(`/api/trips/${tripIdToLoad}`, {
+      const res = await fetch(apiPath(`/api/trips/${tripIdToLoad}`), {
         headers: getAuthHeaders(),
       });
 
@@ -166,7 +167,7 @@ export default function App() {
         }
       } else {
         // Fallback to /api/plan
-        const fallbackRes = await fetch(`/api/plan?id=${tripIdToLoad}`);
+        const fallbackRes = await fetch(apiPath(`/api/plan?id=${tripIdToLoad}`));
         if (fallbackRes.ok) {
           const data = await fallbackRes.json();
           if (data.success && data.plan) {
@@ -199,7 +200,7 @@ export default function App() {
     try {
       setIsCloudSynced(false);
       const targetId = planToSave.tripId || planToSave.id || currentTripId;
-      const res = await fetch(`/api/trips/${targetId}`, {
+      const res = await fetch(apiPath(`/api/trips/${targetId}`), {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ trip: planToSave }),
@@ -214,7 +215,7 @@ export default function App() {
         }
       } else {
         // Fallback for legacy
-        const legacyRes = await fetch('/api/plan', {
+        const legacyRes = await fetch(apiPath('/api/plan'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ plan: planToSave, planId: targetId }),
@@ -269,7 +270,7 @@ export default function App() {
   // Creating a new Trip
   const handleCreateTrip = async (newPlan: ExpeditionPlan) => {
     try {
-      const res = await fetch('/api/trips', {
+      const res = await fetch(apiPath('/api/trips'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ trip: newPlan }),
@@ -292,7 +293,7 @@ export default function App() {
   // Deleting a Trip
   const handleDeleteTrip = async (tripIdToDelete: string) => {
     try {
-      const res = await fetch(`/api/trips/${tripIdToDelete}`, {
+      const res = await fetch(apiPath(`/api/trips/${tripIdToDelete}`), {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -320,7 +321,7 @@ export default function App() {
   const handleResetToSample = async () => {
     if (window.confirm('確定要將系統重設為「馬博橫斷、中央尖山、奇萊東稜」標準三團範例資料嗎？')) {
       try {
-        await fetch('/api/trips/reset', {
+        await fetch(apiPath('/api/trips/reset'), {
           method: 'POST',
           headers: getAuthHeaders(),
         });

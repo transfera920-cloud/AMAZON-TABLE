@@ -88,7 +88,12 @@ async function startServer() {
   const server = http.createServer(async (req, res) => {
     try {
       const parsedUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
-      const pathname = parsedUrl.pathname;
+      let pathname = parsedUrl.pathname;
+      if (pathname.startsWith('/tool01/')) {
+        pathname = pathname.slice('/tool01'.length);
+      } else if (pathname === '/tool01') {
+        pathname = '/';
+      }
       const searchParams = parsedUrl.searchParams;
       const method = (req.method || 'GET').toUpperCase();
 
