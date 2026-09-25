@@ -134,18 +134,13 @@ export default {
 
     // 4. Static Assets Handling
     if (env.ASSETS) {
-      if (pathname === '/' || pathname === '') {
-        return Response.redirect(`${url.origin}/tool01/`, 302);
-      }
-
-      if (pathname === '/tool01') {
-        return Response.redirect(`${url.origin}/tool01/`, 301);
-      }
-
       let res = await env.ASSETS.fetch(request);
       if (res.status === 404 && pathname.startsWith('/tool01')) {
-        const fallbackUrl = new URL('/tool01/index.html', request.url);
-        res = await env.ASSETS.fetch(new Request(fallbackUrl, request));
+        const looksLikeAssetFile = /\.[a-zA-Z0-9]+$/.test(pathname);
+        if (!looksLikeAssetFile) {
+          const fallbackUrl = new URL('/tool01/index.html', request.url);
+          res = await env.ASSETS.fetch(new Request(fallbackUrl, request));
+        }
       }
       return res;
     }

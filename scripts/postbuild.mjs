@@ -1,34 +1,29 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
+import { join } from 'path';
 
-const distDir = path.resolve('dist');
-const targetSubdir = path.resolve(distDir, 'tool01');
+const DIST = 'dist';
+const SUBDIR = join(DIST, 'tool01');
 
-if (!fs.existsSync(distDir)) {
-  console.error('dist directory does not exist!');
+if (!existsSync(DIST)) {
+  console.error('[postbuild] dist 目錄不存在，build 可能失敗了');
   process.exit(1);
 }
 
-// Ensure dist/tool01 exists
-fs.mkdirSync(targetSubdir, { recursive: true });
+if (existsSync(SUBDIR)) {
+  rmSync(SUBDIR, { recursive: true, force: true });
+}
+mkdirSync(SUBDIR, { recursive: true });
 
-// Copy index.html -> dist/tool01/index.html
-const srcIndex = path.join(distDir, 'index.html');
-const destIndex = path.join(targetSubdir, 'index.html');
-if (fs.existsSync(srcIndex)) {
-  fs.copyFileSync(srcIndex, destIndex);
-  console.log(`[postbuild] Created ${destIndex}`);
-} else {
-  console.error(`[postbuild] Source index.html not found at ${srcIndex}`);
-  process.exit(1);
+for (const name of ['index.html', 'assets']) {
+  const src = join(DIST, name);
+  const dest = join(SUBDIR, name);
+  if (existsSync(src)) {
+    renameSync(src, dest);
+    console.log(`[postbuild] moved ${src} -> ${dest}`);
+  } else {
+    console.error(`[postbuild] 預期中的 ${src} 不存在`);
+    process.exit(1);
+  }
 }
 
-// Copy assets directory -> dist/tool01/assets if it exists
-const srcAssets = path.join(distDir, 'assets');
-const destAssets = path.join(targetSubdir, 'assets');
-if (fs.existsSync(srcAssets)) {
-  fs.cpSync(srcAssets, destAssets, { recursive: true });
-  console.log(`[postbuild] Copied assets to ${destAssets}`);
-}
-
-console.log('[postbuild] Build verification passed: dist/tool01/index.html exists and is ready.');
+console.log('[postbuild] dist/tool01/ 已就緒，dist 根目錄不會殘留舊檔案');
