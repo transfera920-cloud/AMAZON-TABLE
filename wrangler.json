@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "amazon-hike-tool01",
+  "name": "amazon-table",
   "main": "worker/index.ts",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": [
