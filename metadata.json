@@ -1,0 +1,8 @@
+{
+  "name": "登山團務總表生成與管理系統",
+  "description": "支援載入 Excel/CSV 自動解析與生成登山團務總表，具備動態標題自訂、後台全欄位編輯、前台個資安全遮蔽與多工作表匯出功能。",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
