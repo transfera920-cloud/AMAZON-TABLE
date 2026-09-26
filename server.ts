@@ -13,7 +13,7 @@ import {
   lookupMemberTrips,
 } from './serverTrips';
 
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Initialize multi-trip storage & seed migration on server startup
 initializeAndMigrateTrips();
@@ -384,21 +384,74 @@ async function startServer() {
         }
       }
 
+      // Static MIME Type Mapping
+      const MIME_TYPES: Record<string, string> = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8',
+        '.mjs': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.svg': 'image/svg+xml',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.ico': 'image/x-icon',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.webp': 'image/webp',
+      };
+
       // Non-API routes: hand over to Vite middleware in dev or serve static in prod
       if (isDev && vite) {
         vite.middlewares(req, res);
       } else {
         const distPath = path.join(process.cwd(), 'dist');
-        let filePath = path.join(distPath, pathname);
-        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-          fs.createReadStream(filePath).pipe(res);
+        const tool01Path = path.join(distPath, 'tool01');
+
+        // Look for static file in tool01 or dist
+        let candidatePath: string | null = null;
+        const candidates = [
+          path.join(tool01Path, pathname),
+          path.join(distPath, pathname),
+          path.join(distPath, parsedUrl.pathname),
+        ];
+
+        for (const p of candidates) {
+          if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+            candidatePath = p;
+            break;
+          }
+        }
+
+        if (candidatePath) {
+          const ext = path.extname(candidatePath).toLowerCase();
+          const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+          res.writeHead(200, { 'Content-Type': contentType });
+          fs.createReadStream(candidatePath).pipe(res);
         } else {
-          const indexHtml = path.join(distPath, 'index.html');
-          if (fs.existsSync(indexHtml)) {
+          // If request has a file extension (e.g. .js, .css, .png), return 404
+          const hasFileExt = path.extname(pathname).length > 0;
+          if (hasFileExt) {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('File Not Found');
+            return;
+          }
+
+          // Otherwise SPA fallback to index.html
+          const tool01Index = path.join(tool01Path, 'index.html');
+          const distIndex = path.join(distPath, 'index.html');
+          const indexHtml = fs.existsSync(tool01Index)
+            ? tool01Index
+            : fs.existsSync(distIndex)
+            ? distIndex
+            : null;
+
+          if (indexHtml) {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             fs.createReadStream(indexHtml).pipe(res);
           } else {
-            res.writeHead(404);
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end('Not Found');
           }
         }

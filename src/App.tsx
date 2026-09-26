@@ -419,136 +419,16 @@ export default function App() {
       {/* Top Navigation Bar */}
       <Header
         plan={plan}
-        trips={trips}
         currentMember={currentMember}
         isAdminMode={isAdminMode}
-        isAdminAuthenticated={isAdminAuthenticated}
-        isCloudSynced={isCloudSynced}
-        onToggleMode={handleToggleMode}
-        onRequestAdminLogin={handleRequestAdminLogin}
-        onAdminLogout={handleAdminLogout}
-        onOpenUploadModal={() => setIsUploadModalOpen(true)}
-        onResetToSample={handleResetToSample}
-        onUpdatePlanTitle={handleUpdatePlanTitle}
-        onCopyShareLink={handleCopyShareLink}
         onOpenTripSelector={() => setIsTripSelectorOpen(true)}
         onOpenMemberModal={() => setIsMemberModalOpen(true)}
-        onOpenCreateTripModal={() => setIsCreateTripModalOpen(true)}
+        onUpdatePlanTitle={handleUpdatePlanTitle}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         
-        {/* Dynamic Mode & Trip Switcher Visual Indicator */}
-        <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 bg-[#131924] rounded-2xl sm:rounded-3xl border border-slate-800 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className={`p-2.5 rounded-2xl shrink-0 ${isAdminMode ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`}>
-              {isAdminMode ? <Sparkles className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-bold text-sm text-slate-100">
-                  {isAdminMode ? '幹部全權管理後台' : '前台公開檢視模式'}
-                </span>
-
-                {/* Current Trip Pill */}
-                <button
-                  type="button"
-                  onClick={() => setIsTripSelectorOpen(true)}
-                  className="flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 hover:border-emerald-400 transition"
-                  title="點擊切換團務"
-                >
-                  <span>團務: {plan.tripId || plan.id || currentTripId}</span>
-                  <span className="text-slate-400 font-sans font-normal truncate max-w-[140px] sm:max-w-[200px]">
-                    {plan.title}
-                  </span>
-                </button>
-
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                  isAdminMode
-                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                }`}>
-                  {isAdminMode ? '全欄位可自訂 • 各團完全獨立' : '隊員友善排版 • 敏感個資已遮蔽'}
-                </span>
-
-                {isAdminAuthenticated && (
-                  <span className="text-[10px] bg-rose-500/20 text-rose-300 font-bold px-2 py-0.5 rounded-full border border-rose-500/40">
-                    幹部已驗證
-                  </span>
-                )}
-
-                {currentMember && (
-                  <span className="text-[10px] bg-sky-950/80 text-sky-300 font-semibold px-2.5 py-0.5 rounded-full border border-sky-700/60">
-                    已辨識隊員: {currentMember.name}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-slate-400 mt-1">
-                {isAdminMode
-                  ? '多團務架構運行中：修改與匯入僅針對當前選擇之團務，絕不會覆蓋其他縱走或登山隊伍資料。'
-                  : '系統依據您的身分自動識別顯示該員所屬的團務進度，點擊「隊員登入 / 我的團務」可切換查看您報名的其他行程。'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
-            {/* Quick Trip Switcher Button */}
-            <button
-              onClick={() => setIsTripSelectorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 transition active:scale-95 shrink-0"
-              title="切換不同團務"
-            >
-              <Mountain className="w-3.5 h-3.5 text-emerald-400" />
-              <span>切換團務 ({trips.length})</span>
-            </button>
-
-            {isAdminMode && (
-              <button
-                onClick={() => setIsCreateTripModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition active:scale-95 shrink-0"
-                title="建立全新獨立團務"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>新增團務</span>
-              </button>
-            )}
-
-            {isAdminMode && (
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition active:scale-95 shrink-0"
-                title="載入 Excel 或多個 CSV 檔案"
-              >
-                <UploadCloud className="w-3.5 h-3.5" />
-                <span>載入 Excel/CSV</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleCopyShareLink}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 transition shrink-0"
-              title="複製此團務網址分享給隊員"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>複製本團連結</span>
-            </button>
-
-            <button
-              onClick={() => handleToggleMode(!isAdminMode)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
-                isAdminMode
-                  ? 'bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700'
-                  : 'bg-amber-600 text-white hover:bg-amber-500 shadow-sm'
-              }`}
-            >
-              <span>{isAdminMode ? '返回前台' : '幹部後台'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
         {/* Access Denied Card (Role-Based Access Control) */}
         {accessDeniedError ? (
           <div className="bg-[#131924] border border-rose-800/80 rounded-3xl p-8 text-center max-w-xl mx-auto my-8 space-y-4 shadow-xl">
@@ -588,6 +468,8 @@ export default function App() {
               plan={plan}
               onUpdatePlan={handleUpdatePlan}
               onOpenUploadModal={() => setIsUploadModalOpen(true)}
+              onOpenTripSelector={() => setIsTripSelectorOpen(true)}
+              onToggleMode={handleToggleMode}
             />
           ) : (
             <FrontendView
@@ -662,18 +544,46 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-xs text-center mt-auto">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Mountain className="w-4 h-4 text-emerald-400" />
-            <span className="font-bold text-white">登山團務總表生成與管理系統</span>
-            <span className="font-mono text-[11px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
-              多團務獨立架構
-            </span>
-          </div>
-          <div className="text-slate-400 text-[11px]">
-            支援同系統多團務並存 • 團員身分自動辨識 • 權限隔離控制 • Excel 各團獨立匯入 • 伺服器即時同步
-          </div>
+      <footer className="border-t border-slate-800/80 bg-[#0d131f] py-6 px-4 text-center mt-auto">
+        <div className="max-w-7xl mx-auto flex items-center justify-center">
+          {isAdminMode ? (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-600 text-white shadow-sm border border-amber-500/50"
+                title="目前處於後台編輯狀態"
+              >
+                <Unlock className="w-3.5 h-3.5" />
+                <span>後台編輯 (編輯中)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleMode(false)}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 transition"
+              >
+                返回前台
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminLogout}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 transition"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>登出後台</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              id="btn-switch-backend"
+              type="button"
+              onClick={handleRequestAdminLogin}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-300 hover:bg-slate-800/60 transition border border-transparent hover:border-slate-800 cursor-pointer"
+              title="進入後台編輯"
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-500" />
+              <span>後台編輯</span>
+            </button>
+          )}
         </div>
       </footer>
     </div>

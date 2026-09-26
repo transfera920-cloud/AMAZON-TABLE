@@ -169,31 +169,6 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
   return (
     <div className="space-y-6 pb-16 w-full max-w-full overflow-x-hidden">
       
-      {/* Privacy Notice & Fast Link Banner (前台公開檢視模式只留下Line聯結) */}
-      <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs text-emerald-300">
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="leading-relaxed">
-            <strong className="text-emerald-200">前台公開檢視模式</strong>：隊員身分證字號已適度遮蔽保護；<strong className="text-emerald-200">緊急聯絡人、留守人與緊急電話完整顯示</strong>，確保登山即時通訊。
-          </span>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {safeGlobalLineUrl && (
-            <a
-              href={safeGlobalLineUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-xl text-xs font-bold transition shadow-xs"
-              title="點擊直接超連結開啟 LINE 群組"
-            >
-              <MessageCircle className="w-3.5 h-3.5 fill-current" />
-              <span>登山 LINE 群組</span>
-              <ExternalLink className="w-3 h-3 opacity-80" />
-            </a>
-          )}
-        </div>
-      </div>
-
       {/* Dynamic Navigation Tabs with Responsive Wrapping (鎖定銀幕，一行放不下就自動折行，隱藏 LINE 連結工作表標籤) */}
       <div className="flex flex-wrap gap-2 p-2 bg-[#131924] rounded-2xl border border-slate-800 shadow-md w-full max-w-full">
         {visibleSheets.map((sheet) => {

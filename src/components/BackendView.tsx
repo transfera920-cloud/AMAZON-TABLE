@@ -41,9 +41,17 @@ interface BackendViewProps {
   plan: ExpeditionPlan;
   onUpdatePlan: (updatedPlan: ExpeditionPlan) => void;
   onOpenUploadModal?: () => void;
+  onOpenTripSelector?: () => void;
+  onToggleMode?: (isAdmin: boolean) => void;
 }
 
-export const BackendView: React.FC<BackendViewProps> = ({ plan, onUpdatePlan, onOpenUploadModal }) => {
+export const BackendView: React.FC<BackendViewProps> = ({ 
+  plan, 
+  onUpdatePlan, 
+  onOpenUploadModal,
+  onOpenTripSelector,
+  onToggleMode,
+}) => {
   // Resolve all dynamic sheets from plan or fallback
   const allSheets: DynamicSheet[] = plan.sheets && plan.sheets.length > 0
     ? plan.sheets
@@ -300,6 +308,18 @@ export const BackendView: React.FC<BackendViewProps> = ({ plan, onUpdatePlan, on
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {onOpenTripSelector && (
+            <button
+              type="button"
+              onClick={onOpenTripSelector}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl font-semibold transition text-xs shadow-xs"
+              title="切換不同團務進行管理"
+            >
+              <Compass className="w-3.5 h-3.5 text-emerald-400" />
+              <span>切換團務</span>
+            </button>
+          )}
+
           {onOpenUploadModal && (
             <button
               id="btn-backend-upload-excel"
@@ -315,7 +335,7 @@ export const BackendView: React.FC<BackendViewProps> = ({ plan, onUpdatePlan, on
 
           <button
             onClick={() => setIsColumnModalOpen(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold transition"
+            className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold transition text-xs"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>自訂/新增欄位標題</span>
@@ -323,11 +343,22 @@ export const BackendView: React.FC<BackendViewProps> = ({ plan, onUpdatePlan, on
 
           <button
             onClick={copyNationalParkFormat}
-            className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition border border-slate-700"
+            className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition border border-slate-700 text-xs"
           >
             {copiedType === 'park' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copiedType === 'park' ? '已複製入園名冊' : '一鍵複製入園名冊'}</span>
           </button>
+
+          {onToggleMode && (
+            <button
+              type="button"
+              onClick={() => onToggleMode(false)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700 rounded-xl font-semibold transition text-xs"
+              title="退出後台編輯回到前台公開檢視"
+            >
+              <span>返回前台</span>
+            </button>
+          )}
         </div>
       </div>
 
