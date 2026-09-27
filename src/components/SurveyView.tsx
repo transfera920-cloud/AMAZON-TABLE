@@ -146,7 +146,10 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
   // Insights Calculations
   const stats = useMemo(() => {
     if (surveyItems.length === 0) {
-      return { total: 0, avgPeaks: 0, maxPeaks: 0, aidHolders: 0, specialMedCount: 0 };
+      return {
+        total: 0, avgPeaks: 0, maxPeaks: 0, aidHolders: 0, specialMedCount: 0,
+        paceAgreeCount: 0, longHikePercent: 0, offlineMapPercent: 0,
+      };
     }
     const total = surveyItems.length;
     const peakValues = surveyItems.map(i => i.peaksCountNum).filter(n => n > 0);
@@ -165,7 +168,25 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
       return v && v !== '無' && v !== '否' && v !== '正常' && v !== '無過敏' && v !== '-';
     }).length;
 
-    return { total, avgPeaks, maxPeaks, aidHolders, paceAgreeCount, specialMedCount };
+    // 長程縱走自理：空白、「無」、或以「無」開頭（如「無，要搭伙」）都視為不具備
+    const longHikeCount = surveyItems.filter(i => {
+      const v = (i.longHikeExp || '').trim();
+      if (!v || v === '-') return false;
+      if (v.startsWith('無') || v === '否') return false;
+      return true;
+    }).length;
+    const longHikePercent = total > 0 ? Math.round((longHikeCount / total) * 100) : 0;
+
+    // 離線地圖判讀：空白或「無/不會/否/不知道/不行」都視為不具備
+    const offlineMapCount = surveyItems.filter(i => {
+      const v = (i.offlineMap || '').trim().toLowerCase();
+      if (!v || v === '-') return false;
+      if (v === '無' || v === '不會' || v === '否' || v === '不知道' || v === '不行' || v === 'no') return false;
+      return true;
+    }).length;
+    const offlineMapPercent = total > 0 ? Math.round((offlineMapCount / total) * 100) : 0;
+
+    return { total, avgPeaks, maxPeaks, aidHolders, paceAgreeCount, specialMedCount, longHikePercent, offlineMapPercent };
   }, [surveyItems]);
 
   // Filtering & Sorting
@@ -297,8 +318,10 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
               <span>長程縱走自理</span>
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-black text-emerald-200">100%</span>
-              <span className="text-xs text-emerald-400/80">全隊具縱走經驗</span>
+              <span className="text-xl font-black text-emerald-200">{stats.longHikePercent}%</span>
+              <span className="text-xs text-emerald-400/80">
+                {stats.longHikePercent === 100 ? '全隊具縱走經驗' : '具縱走自理經驗'}
+              </span>
             </div>
           </div>
 
@@ -308,8 +331,10 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
               <span>離線地圖判讀</span>
             </div>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-black text-indigo-200">100%</span>
-              <span className="text-xs text-indigo-400/80">會使用並回報座標</span>
+              <span className="text-xl font-black text-indigo-200">{stats.offlineMapPercent}%</span>
+              <span className="text-xs text-indigo-400/80">
+                {stats.offlineMapPercent === 100 ? '會使用並回報座標' : '會使用離線地圖'}
+              </span>
             </div>
           </div>
         </div>
