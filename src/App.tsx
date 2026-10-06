@@ -47,7 +47,7 @@ export default function App() {
   
   // Current plan for the active trip
   const [plan, setPlan] = useState<ExpeditionPlan>(() => {
-    const saved = localStorage.getItem(`mountaineering_plan_${currentTripId}`);
+    const saved = sessionStorage.getItem(`mountaineering_plan_${currentTripId}`);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -64,7 +64,7 @@ export default function App() {
 
   // Authentication & Identity
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('expedition_admin_auth') === 'true';
+    return !!sessionStorage.getItem('expedition_admin_token');
   });
 
   const [currentMember, setCurrentMember] = useState<MemberIdentity | null>(() => {
@@ -100,13 +100,20 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const clearPlanCache = () => {
+    Object.keys(sessionStorage)
+      .filter((k) => k.startsWith('mountaineering_plan_'))
+      .forEach((k) => sessionStorage.removeItem(k));
+  };
+
   // Helper to construct auth headers
   const getAuthHeaders = useCallback(() => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (isAdminAuthenticated) {
-      headers['x-admin-auth'] = 'true';
+    const adminToken = sessionStorage.getItem('expedition_admin_token');
+    if (isAdminAuthenticated && adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
     }
     if (currentMember) {
       if (currentMember.email) headers['x-member-email'] = encodeURIComponent(currentMember.email);
@@ -157,24 +164,13 @@ export default function App() {
           setPlan(data.trip);
           setCurrentTripId(tripIdToLoad);
           sessionStorage.setItem('expedition_current_trip_id', tripIdToLoad);
-          localStorage.setItem(`mountaineering_plan_${tripIdToLoad}`, JSON.stringify(data.trip));
+          sessionStorage.setItem(`mountaineering_plan_${tripIdToLoad}`, JSON.stringify(data.trip));
           setIsCloudSynced(true);
 
           // Update browser URL query param without full reload
           const url = new URL(window.location.href);
           url.searchParams.set('tripId', tripIdToLoad);
           window.history.replaceState({}, '', url.toString());
-        }
-      } else {
-        // Fallback to /api/plan
-        const fallbackRes = await fetch(apiPath(`/api/plan?id=${tripIdToLoad}`));
-        if (fallbackRes.ok) {
-          const data = await fallbackRes.json();
-          if (data.success && data.plan) {
-            setPlan(data.plan);
-            setCurrentTripId(tripIdToLoad);
-            sessionStorage.setItem('expedition_current_trip_id', tripIdToLoad);
-          }
         }
       }
     } catch (e) {
@@ -213,16 +209,12 @@ export default function App() {
         if (customMsg) {
           showToast(customMsg);
         }
-      } else {
-        // Fallback for legacy
-        const legacyRes = await fetch(apiPath('/api/plan'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planToSave, planId: targetId }),
-        });
-        if (legacyRes.ok) {
-          setIsCloudSynced(true);
-        }
+      } else if (res.status === 401 || res.status === 403) {
+        // 登入已過期或無權限：回到前台模式
+        sessionStorage.removeItem('expedition_admin_token');
+        setIsAdminAuthenticated(false);
+        setIsAdminMode(false);
+        showToast('管理員登入已過期，請重新登入。');
       }
     } catch (e) {
       console.error('Failed to sync trip to server:', e);
@@ -232,7 +224,7 @@ export default function App() {
 
   // Persist plan changes to local cache and debounce server save
   useEffect(() => {
-    localStorage.setItem(`mountaineering_plan_${currentTripId}`, JSON.stringify(plan));
+    sessionStorage.setItem(`mountaineering_plan_${currentTripId}`, JSON.stringify(plan));
 
     if (isFirstMountRef.current) {
       isFirstMountRef.current = false;
@@ -357,13 +349,13 @@ export default function App() {
   const handleLoginSuccess = () => {
     setIsAdminAuthenticated(true);
     setIsAdminMode(true);
-    sessionStorage.setItem('expedition_admin_auth', 'true');
     showToast('幹部身份驗證成功，已開啟全功能管理後台！');
     fetchTripsList();
   };
 
   const handleAdminLogout = () => {
-    sessionStorage.removeItem('expedition_admin_auth');
+    sessionStorage.removeItem('expedition_admin_token');
+    clearPlanCache();
     setIsAdminAuthenticated(false);
     setIsAdminMode(false);
     showToast('已安全登出幹部後台，回到公開前台模式');

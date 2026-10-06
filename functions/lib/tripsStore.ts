@@ -1,5 +1,6 @@
 import { ExpeditionPlan, TripSummary, MemberPII } from '../../src/types';
 import { initialExpeditionData } from '../../src/data/defaultExpedition';
+import { verifyAdminToken, getBearerToken } from './adminAuth';
 
 // ==========================================
 // Cloudflare KV & Pages Types
@@ -43,20 +44,20 @@ export type PagesFunction<
 
 export function jsonResponse(data: any, init?: ResponseInit): Response {
   return new Response(JSON.stringify(data), {
+    ...init,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      ...init?.headers,
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      ...(init?.headers as Record<string, string> | undefined),
     },
-    ...init,
   });
 }
 
-export function checkIsAdmin(request: Request): boolean {
-  const adminHeader = request.headers.get('x-admin-auth');
-  const url = new URL(request.url);
-  const adminQuery = url.searchParams.get('adminAuth');
-  return adminHeader === 'true' || adminQuery === 'true';
+/** 管理員身分一律由後端驗證簽章 token（Authorization: Bearer ...），不再相信前端自帶的旗標 */
+export async function checkIsAdmin(request: Request, env: Env): Promise<boolean> {
+  const token = getBearerToken(request.headers.get('Authorization'));
+  return verifyAdminToken(env as any, token);
 }
 
 export function extractMemberIdentity(request: Request) {
@@ -194,6 +195,62 @@ export function toTripSummary(plan: ExpeditionPlan): TripSummary {
   };
 }
 
+// ==========================================
+// 非管理員（隊員）看到的資料：後端先遮蔽敏感個資
+// ==========================================
+const TW_ID_RE = /^[A-Za-z][12]\d{8}$/;
+
+function maskId(v?: string): string {
+  if (!v) return '';
+  const c = v.trim();
+  return c.length < 5 ? '******' : c.slice(0, 2) + '****' + c.slice(-3);
+}
+
+/** 回傳給隊員的團務：移除身分證、生日、Email、住址、血型、病史、保險受益人；PII 工作表內容清空 */
+export function sanitizeTripForMember(plan: ExpeditionPlan): ExpeditionPlan {
+  const copy: any = JSON.parse(JSON.stringify(plan));
+
+  if (Array.isArray(copy.members)) {
+    copy.members = copy.members.map((m: any) => ({
+      ...m,
+      idNumber: maskId(m.idNumber),
+      birthDate: '',
+      email: '',
+      address: '',
+      bloodType: '',
+      medicalHistory: '',
+      insuranceBeneficiary: '',
+    }));
+  }
+
+  if (copy.leader) {
+    copy.leader = { ...copy.leader, emergencyContact: '', emergencyPhone: '' };
+  }
+
+  if (Array.isArray(copy.sheets)) {
+    copy.sheets = copy.sheets.map((sheet: any) => {
+      if (sheet.sheetType === 'pii') {
+        return { ...sheet, rawRows: [] };
+      }
+      if (Array.isArray(sheet.rawRows)) {
+        return {
+          ...sheet,
+          rawRows: sheet.rawRows.map((row: any) =>
+            Array.isArray(row)
+              ? row.map((cell: any) =>
+                  typeof cell === 'string' && TW_ID_RE.test(cell.trim()) ? maskId(cell) : cell
+                )
+              : row
+          ),
+        };
+      }
+      return sheet;
+    });
+  }
+
+  return copy as ExpeditionPlan;
+}
+
 export function lookupMemberTripsFromList(
   allTrips: ExpeditionPlan[],
   rawName: string,
@@ -298,8 +355,6 @@ export function lookupMemberTripsFromList(
           trips: chosen.trips.map(toTripSummary),
           member: {
             name: chosen.name,
-            email: chosen.email,
-            phone: chosen.phone,
             memberId: chosen.key,
           },
         };
@@ -334,8 +389,6 @@ export function lookupMemberTripsFromList(
     trips: targetGroup.trips.map(toTripSummary),
     member: {
       name: targetGroup.name,
-      email: targetGroup.email,
-      phone: targetGroup.phone,
       memberId: targetGroup.key,
     },
   };

@@ -216,8 +216,6 @@ export function lookupMemberTrips(rawName: string, disambiguateKey?: string): Me
           trips: chosen.trips.map(toTripSummary),
           member: {
             name: chosen.name,
-            email: chosen.email,
-            phone: chosen.phone,
             memberId: chosen.key,
           },
         };
@@ -254,8 +252,6 @@ export function lookupMemberTrips(rawName: string, disambiguateKey?: string): Me
     trips: targetGroup.trips.map(toTripSummary),
     member: {
       name: targetGroup.name,
-      email: targetGroup.email,
-      phone: targetGroup.phone,
       memberId: targetGroup.key,
     },
   };

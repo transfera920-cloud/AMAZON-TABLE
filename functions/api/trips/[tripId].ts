@@ -7,6 +7,7 @@ import {
   saveTrip,
   deleteTrip,
   memberMatches,
+  sanitizeTripForMember,
 } from '../../lib/tripsStore';
 
 export const onRequestGet: PagesFunction = async (context) => {
@@ -21,7 +22,7 @@ export const onRequestGet: PagesFunction = async (context) => {
     );
   }
 
-  const isAdmin = checkIsAdmin(request);
+  const isAdmin = await checkIsAdmin(request, env);
   if (isAdmin) {
     return jsonResponse({ success: true, role: 'admin', trip });
   }
@@ -30,7 +31,7 @@ export const onRequestGet: PagesFunction = async (context) => {
   if (memberIden && trip.members && Array.isArray(trip.members)) {
     const isMember = trip.members.some((m) => memberMatches(m, memberIden));
     if (isMember) {
-      return jsonResponse({ success: true, role: 'member', trip });
+      return jsonResponse({ success: true, role: 'member', trip: sanitizeTripForMember(trip) });
     }
 
     return jsonResponse(
@@ -53,7 +54,7 @@ export const onRequestGet: PagesFunction = async (context) => {
 
 export const onRequestPut: PagesFunction = async (context) => {
   const { request, env, params } = context;
-  if (!checkIsAdmin(request)) {
+  if (!(await checkIsAdmin(request, env))) {
     return jsonResponse(
       { success: false, error: '權限不足：僅有管理者可修改團務' },
       { status: 403 }
@@ -100,7 +101,7 @@ export const onRequestPut: PagesFunction = async (context) => {
 
 export const onRequestDelete: PagesFunction = async (context) => {
   const { request, env, params } = context;
-  if (!checkIsAdmin(request)) {
+  if (!(await checkIsAdmin(request, env))) {
     return jsonResponse(
       { success: false, error: '權限不足：僅有管理者可刪除團務' },
       { status: 403 }

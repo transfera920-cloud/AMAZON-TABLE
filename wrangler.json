@@ -6,6 +6,11 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "amazon-hike.com/tool23", "zone_name": "amazon-hike.com" },
+    { "pattern": "amazon-hike.com/tool23/*", "zone_name": "amazon-hike.com" }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

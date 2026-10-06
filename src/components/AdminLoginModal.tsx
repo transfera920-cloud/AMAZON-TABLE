@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiPath } from '../utils/apiBase';
 import { Lock, ShieldAlert, KeyRound, User, Eye, EyeOff, X } from 'lucide-react';
 
 interface AdminLoginModalProps {
@@ -22,27 +23,34 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const cleanUser = username.trim().toLowerCase();
-    const cleanPass = password.trim();
+    try {
+      // 帳密由後端驗證；前端程式碼不再含任何帳號或密碼
+      const res = await fetch(apiPath('/api/admin/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-    // Check credentials (yy661003 or admin)
-    const isUserValid = cleanUser === 'yy661003' || cleanUser === 'admin';
-    const isPassValid = cleanPass === 'yy661003' || cleanPass.toLowerCase() === 'yy661003' || cleanPass === 'admin';
-
-    if (isUserValid && isPassValid) {
-      sessionStorage.setItem('expedition_admin_auth', 'true');
+      if (res.ok && data.success && data.token) {
+        sessionStorage.setItem('expedition_admin_token', data.token);
+        setPassword('');
+        setIsSubmitting(false);
+        if (onSuccess) onSuccess();
+        if (onLoginSuccess) onLoginSuccess();
+        onClose();
+      } else {
+        setIsSubmitting(false);
+        setErrorMessage(data.error || '帳號或密碼錯誤！請確認後重新輸入。');
+      }
+    } catch {
       setIsSubmitting(false);
-      if (onSuccess) onSuccess();
-      if (onLoginSuccess) onLoginSuccess();
-      onClose();
-    } else {
-      setIsSubmitting(false);
-      setErrorMessage('帳號或密碼錯誤！請確認後重新輸入。');
+      setErrorMessage('無法連線到伺服器，請稍後再試。');
     }
   };
 

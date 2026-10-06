@@ -3,6 +3,13 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import {
+  verifyAdminCredentials,
+  issueAdminToken,
+  verifyAdminToken,
+  getBearerToken,
+} from './functions/lib/adminAuth';
+import { sanitizeTripForMember } from './functions/lib/tripsStore';
+import {
   initializeAndMigrateTrips,
   getAllTrips,
   getTrip,
@@ -18,11 +25,10 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 // Initialize multi-trip storage & seed migration on server startup
 initializeAndMigrateTrips();
 
-// Helper: Check if request has Admin authorization
-function checkIsAdmin(req: http.IncomingMessage, searchParams: URLSearchParams): boolean {
-  const adminHeader = req.headers['x-admin-auth'];
-  const adminQuery = searchParams.get('adminAuth');
-  return adminHeader === 'true' || adminQuery === 'true';
+// Helper: 管理員身分一律驗證後端簽章 token（開發環境從 .env 讀取 ADMIN_* 變數）
+async function checkIsAdmin(req: http.IncomingMessage, _searchParams?: URLSearchParams): Promise<boolean> {
+  const token = getBearerToken(req.headers['authorization'] as string | undefined);
+  return verifyAdminToken(process.env as any, token);
 }
 
 // Helper: Extract Member Identity from headers or query
@@ -48,10 +54,8 @@ function extractMemberIdentity(req: http.IncomingMessage, searchParams: URLSearc
 function sendJson(res: http.ServerResponse, statusCode: number, data: any) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, x-admin-auth, x-member-email, x-member-phone, x-member-name, x-member-id',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
   });
   res.end(JSON.stringify(data));
 }
@@ -89,9 +93,9 @@ async function startServer() {
     try {
       const parsedUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
       let pathname = parsedUrl.pathname;
-      if (pathname.startsWith('/tool01/')) {
-        pathname = pathname.slice('/tool01'.length);
-      } else if (pathname === '/tool01') {
+      if (pathname.startsWith('/tool23/')) {
+        pathname = pathname.slice('/tool23'.length);
+      } else if (pathname === '/tool23') {
         pathname = '/';
       }
       const searchParams = parsedUrl.searchParams;
@@ -99,12 +103,7 @@ async function startServer() {
 
       // Handle CORS Preflight
       if (method === 'OPTIONS') {
-        res.writeHead(204, {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers':
-            'Content-Type, Authorization, x-admin-auth, x-member-email, x-member-phone, x-member-name, x-member-id',
-        });
+        res.writeHead(204);
         res.end();
         return;
       }
@@ -112,6 +111,17 @@ async function startServer() {
       // API Routes
       if (pathname === '/api/health' && method === 'GET') {
         return sendJson(res, 200, { status: 'ok', time: new Date().toISOString() });
+      }
+
+      // Admin login (後端驗證帳密，成功才發 token)
+      if (pathname === '/api/admin/login' && method === 'POST') {
+        const body = await getJsonBody(req);
+        const ok = await verifyAdminCredentials(process.env as any, body?.username, body?.password);
+        if (!ok) {
+          return sendJson(res, 401, { success: false, error: '帳號或密碼錯誤！請確認後重新輸入。' });
+        }
+        const { token, expiresAt } = await issueAdminToken(process.env as any);
+        return sendJson(res, 200, { success: true, token, expiresAt });
       }
 
       // 0. Member Name Lookup Entry Point (POST or GET)
@@ -151,7 +161,7 @@ async function startServer() {
       // 1. /api/trips (GET & POST)
       if (pathname === '/api/trips') {
         if (method === 'GET') {
-          const isAdmin = checkIsAdmin(req, searchParams);
+          const isAdmin = await checkIsAdmin(req, searchParams);
           const memberIden = extractMemberIdentity(req, searchParams);
           const allTrips = getAllTrips();
 
@@ -202,7 +212,7 @@ async function startServer() {
         }
 
         if (method === 'POST') {
-          if (!checkIsAdmin(req, searchParams)) {
+          if (!(await checkIsAdmin(req, searchParams))) {
             return sendJson(res, 403, { success: false, error: '權限不足：僅有管理者可建立團務' });
           }
 
@@ -236,7 +246,7 @@ async function startServer() {
 
       // 6. Reset trips (POST /api/trips/reset)
       if (pathname === '/api/trips/reset' && method === 'POST') {
-        if (!checkIsAdmin(req, searchParams)) {
+        if (!(await checkIsAdmin(req, searchParams))) {
           return sendJson(res, 403, { success: false, error: '權限不足' });
         }
 
@@ -267,7 +277,7 @@ async function startServer() {
             return sendJson(res, 404, { success: false, error: `找不到團務編號 ${tripId}` });
           }
 
-          const isAdmin = checkIsAdmin(req, searchParams);
+          const isAdmin = await checkIsAdmin(req, searchParams);
           if (isAdmin) {
             return sendJson(res, 200, { success: true, role: 'admin', trip });
           }
@@ -276,7 +286,7 @@ async function startServer() {
           if (memberIden && trip.members && Array.isArray(trip.members)) {
             const isMember = trip.members.some((m) => memberMatches(m, memberIden));
             if (isMember) {
-              return sendJson(res, 200, { success: true, role: 'member', trip });
+              return sendJson(res, 200, { success: true, role: 'member', trip: sanitizeTripForMember(trip as any) });
             }
 
             return sendJson(res, 403, {
@@ -292,7 +302,7 @@ async function startServer() {
         }
 
         if (method === 'PUT') {
-          if (!checkIsAdmin(req, searchParams)) {
+          if (!(await checkIsAdmin(req, searchParams))) {
             return sendJson(res, 403, { success: false, error: '權限不足：僅有管理者可修改團務' });
           }
 
@@ -319,7 +329,7 @@ async function startServer() {
         }
 
         if (method === 'DELETE') {
-          if (!checkIsAdmin(req, searchParams)) {
+          if (!(await checkIsAdmin(req, searchParams))) {
             return sendJson(res, 403, { success: false, error: '權限不足：僅有管理者可刪除團務' });
           }
 
@@ -332,57 +342,6 @@ async function startServer() {
         }
       }
 
-      // Backward compatibility routes for legacy callers
-      if (pathname === '/api/plan') {
-        if (method === 'GET') {
-          const planId = searchParams.get('id');
-          if (planId) {
-            const trip = getTrip(planId);
-            if (trip) {
-              return sendJson(res, 200, { success: true, hasSavedData: true, plan: trip });
-            }
-          }
-
-          const all = getAllTrips();
-          if (all.length > 0) {
-            return sendJson(res, 200, { success: true, hasSavedData: true, plan: all[0] });
-          }
-
-          return sendJson(res, 200, { success: true, hasSavedData: false, plan: null });
-        }
-
-        if (method === 'POST') {
-          const body = await getJsonBody(req);
-          const { plan, planId } = body || {};
-          if (!plan) {
-            return sendJson(res, 400, { success: false, error: 'Missing plan payload' });
-          }
-
-          const targetId = planId || plan.tripId || plan.id || 'TRIP-001';
-          plan.tripId = targetId;
-          plan.id = targetId;
-
-          const success = saveTrip(plan);
-          if (success) {
-            return sendJson(res, 200, {
-              success: true,
-              message: '資料已成功儲存至伺服器！',
-              updatedAt: new Date().toISOString(),
-            });
-          } else {
-            return sendJson(res, 500, { success: false, error: 'Failed to write plan to storage' });
-          }
-        }
-      }
-
-      if (pathname === '/api/plan/reset' && method === 'POST') {
-        try {
-          initializeAndMigrateTrips();
-          return sendJson(res, 200, { success: true, message: '伺服器端資料已重設' });
-        } catch (e) {
-          return sendJson(res, 500, { success: false, error: 'Failed to reset' });
-        }
-      }
 
       // Static MIME Type Mapping
       const MIME_TYPES: Record<string, string> = {
@@ -407,12 +366,12 @@ async function startServer() {
         vite.middlewares(req, res);
       } else {
         const distPath = path.join(process.cwd(), 'dist');
-        const tool01Path = path.join(distPath, 'tool01');
+        const tool23Path = path.join(distPath, 'tool23');
 
-        // Look for static file in tool01 or dist
+        // Look for static file in tool23 or dist
         let candidatePath: string | null = null;
         const candidates = [
-          path.join(tool01Path, pathname),
+          path.join(tool23Path, pathname),
           path.join(distPath, pathname),
           path.join(distPath, parsedUrl.pathname),
         ];
@@ -439,10 +398,10 @@ async function startServer() {
           }
 
           // Otherwise SPA fallback to index.html
-          const tool01Index = path.join(tool01Path, 'index.html');
+          const tool23Index = path.join(tool23Path, 'index.html');
           const distIndex = path.join(distPath, 'index.html');
-          const indexHtml = fs.existsSync(tool01Index)
-            ? tool01Index
+          const indexHtml = fs.existsSync(tool23Index)
+            ? tool23Index
             : fs.existsSync(distIndex)
             ? distIndex
             : null;

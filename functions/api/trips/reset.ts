@@ -7,7 +7,7 @@ import {
 
 export const onRequestPost: PagesFunction = async (context) => {
   const { request, env } = context;
-  if (!checkIsAdmin(request)) {
+  if (!(await checkIsAdmin(request, env))) {
     return jsonResponse(
       { success: false, error: '權限不足' },
       { status: 403 }

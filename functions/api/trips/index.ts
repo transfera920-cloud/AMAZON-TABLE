@@ -13,7 +13,7 @@ import {
 
 export const onRequestGet: PagesFunction = async (context) => {
   const { request, env } = context;
-  const isAdmin = checkIsAdmin(request);
+  const isAdmin = await checkIsAdmin(request, env);
   const memberIden = extractMemberIdentity(request);
 
   // Requirement 3: If KV has no trip: keys, automatically seed sample data
@@ -72,7 +72,7 @@ export const onRequestGet: PagesFunction = async (context) => {
 
 export const onRequestPost: PagesFunction = async (context) => {
   const { request, env } = context;
-  if (!checkIsAdmin(request)) {
+  if (!(await checkIsAdmin(request, env))) {
     return jsonResponse(
       { success: false, error: '權限不足：僅有管理者可建立團務' },
       { status: 403 }

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
 
 const DIST = 'dist';
-const SUBDIR = join(DIST, 'tool01');
+const SUBDIR = join(DIST, 'tool23');
 
 if (!existsSync(DIST)) {
   console.error('[postbuild] dist 目錄不存在，build 可能失敗了');
@@ -26,4 +26,4 @@ for (const name of ['index.html', 'assets']) {
   }
 }
 
-console.log('[postbuild] dist/tool01/ 已就緒，dist 根目錄不會殘留舊檔案');
+console.log('[postbuild] dist/tool23/ 已就緒，dist 根目錄不會殘留舊檔案');

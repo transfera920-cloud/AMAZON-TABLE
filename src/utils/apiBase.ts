@@ -1,9 +1,9 @@
 /**
  * Resolves API endpoint path.
- * When the app is deployed under a sub-path like /tool01/,
+ * When the app is deployed under a sub-path like /tool23/,
  * ensures API requests route correctly.
  */
-export const API_BASE = (((import.meta as any).env?.BASE_URL as string) || '/tool01/').replace(/\/+$/, '');
+export const API_BASE = (((import.meta as any).env?.BASE_URL as string) || '/tool23/').replace(/\/+$/, '');
 
 export function apiPath(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;

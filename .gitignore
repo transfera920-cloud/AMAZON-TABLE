@@ -7,3 +7,8 @@ coverage/
 bun.lock*
 .env*
 !.env.example
+.dev.vars
+
+# 個資與 build 產物：絕對不要進 git
+data/
+server.js
