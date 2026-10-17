@@ -93,9 +93,9 @@ async function startServer() {
     try {
       const parsedUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
       let pathname = parsedUrl.pathname;
-      if (pathname.startsWith('/tool23/')) {
-        pathname = pathname.slice('/tool23'.length);
-      } else if (pathname === '/tool23') {
+      if (pathname.startsWith('/tool16/')) {
+        pathname = pathname.slice('/tool16'.length);
+      } else if (pathname === '/tool16') {
         pathname = '/';
       }
       const searchParams = parsedUrl.searchParams;
@@ -366,12 +366,12 @@ async function startServer() {
         vite.middlewares(req, res);
       } else {
         const distPath = path.join(process.cwd(), 'dist');
-        const tool23Path = path.join(distPath, 'tool23');
+        const tool16Path = path.join(distPath, 'tool16');
 
-        // Look for static file in tool23 or dist
+        // Look for static file in tool16 or dist
         let candidatePath: string | null = null;
         const candidates = [
-          path.join(tool23Path, pathname),
+          path.join(tool16Path, pathname),
           path.join(distPath, pathname),
           path.join(distPath, parsedUrl.pathname),
         ];
@@ -398,10 +398,10 @@ async function startServer() {
           }
 
           // Otherwise SPA fallback to index.html
-          const tool23Index = path.join(tool23Path, 'index.html');
+          const tool16Index = path.join(tool16Path, 'index.html');
           const distIndex = path.join(distPath, 'index.html');
-          const indexHtml = fs.existsSync(tool23Index)
-            ? tool23Index
+          const indexHtml = fs.existsSync(tool16Index)
+            ? tool16Index
             : fs.existsSync(distIndex)
             ? distIndex
             : null;

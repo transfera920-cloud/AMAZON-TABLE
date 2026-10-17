@@ -33,8 +33,11 @@ function createEventContext<P extends string = any>(
   };
 }
 
-function withSecurityHeaders(res: Response): Response {
+function withSecurityHeaders(res: Response, pathname = ''): Response {
   const headers = new Headers(res.headers);
+  if (pathname === '/api' || pathname.startsWith('/api/') || pathname.startsWith('/tool16/api')) {
+    headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -44,7 +47,7 @@ function withSecurityHeaders(res: Response): Response {
 
 export default {
   async fetch(request: Request, env: Env, ctx?: any): Promise<Response> {
-    return withSecurityHeaders(await handle(request, env, ctx));
+    return withSecurityHeaders(await handle(request, env, ctx), new URL(request.url).pathname);
   },
 };
 
@@ -59,13 +62,28 @@ async function handle(request: Request, env: Env, ctx?: any): Promise<Response> 
       return new Response(null, { status: 204 });
     }
 
-    // 2. Identify API subpath (supports both /tool23/api/... and /api/...)
+    // 1.5 SEO：統一網址、sitemap
+    if (pathname === '/tool16' || pathname === '/tool16/index.html') {
+      return new Response(null, { status: 301, headers: { Location: `/tool16/${url.search}` } });
+    }
+    if (pathname === '/tool16/sitemap.xml' && (method === 'GET' || method === 'HEAD')) {
+      const xml =
+        '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+        '  <url>\n    <loc>https://amazon-hike.com/tool16/</loc>\n  </url>\n' +
+        '</urlset>\n';
+      return new Response(method === 'HEAD' ? null : xml, {
+        headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' },
+      });
+    }
+
+    // 2. Identify API subpath (supports both /tool16/api/... and /api/...)
     let apiSubpath: string | null = null;
-    if (pathname.startsWith('/tool23/api/')) {
-      apiSubpath = pathname.slice('/tool23'.length);
+    if (pathname.startsWith('/tool16/api/')) {
+      apiSubpath = pathname.slice('/tool16'.length);
     } else if (pathname.startsWith('/api/')) {
       apiSubpath = pathname;
-    } else if (pathname === '/tool23/api' || pathname === '/api') {
+    } else if (pathname === '/tool16/api' || pathname === '/api') {
       apiSubpath = '/api';
     }
 
@@ -131,12 +149,15 @@ async function handle(request: Request, env: Env, ctx?: any): Promise<Response> 
     // 4. Static Assets Handling
     if (env.ASSETS) {
       let res = await env.ASSETS.fetch(request);
-      if (res.status === 404 && pathname.startsWith('/tool23')) {
-        const looksLikeAssetFile = /\.[a-zA-Z0-9]+$/.test(pathname);
-        if (!looksLikeAssetFile) {
-          const fallbackUrl = new URL('/tool23/index.html', request.url);
-          res = await env.ASSETS.fetch(new Request(fallbackUrl, request));
-        }
+      if (res.status === 404 && pathname === '/tool16/') {
+        const fallbackUrl = new URL('/tool16/index.html', request.url);
+        res = await env.ASSETS.fetch(new Request(fallbackUrl, request));
+      }
+      // 本站只有 /tool16/ 一個頁面；其他不存在的路徑回真正的 404，避免軟 404 被收錄
+      if (res.status === 404 && pathname.startsWith('/tool16')) {
+        const headers = new Headers(res.headers);
+        headers.set('X-Robots-Tag', 'noindex, nofollow');
+        return new Response(res.body, { status: 404, statusText: 'Not Found', headers });
       }
       return res;
     }

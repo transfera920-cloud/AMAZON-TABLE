@@ -539,6 +539,13 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-[#0d131f] py-6 px-4 text-center mt-auto">
+        <nav aria-label="breadcrumb" className="max-w-7xl mx-auto mb-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <a href="https://amazon-hike.com/" className="hover:text-emerald-300 transition-colors">首頁</a>
+          <span aria-hidden="true">/</span>
+          <a href="https://amazon-hike.com/tools" className="hover:text-emerald-300 transition-colors">工具</a>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-slate-200">登山團務總表</span>
+        </nav>
         <div className="max-w-7xl mx-auto flex items-center justify-center">
           {isAdminMode ? (
             <div className="flex flex-wrap items-center justify-center gap-3">
