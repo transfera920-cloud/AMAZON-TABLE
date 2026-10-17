@@ -189,6 +189,8 @@ export default function App() {
   // When auth or member identity changes, refresh trips list and reload current trip
   useEffect(() => {
     fetchTripsList();
+    // 若畫面正卡在「存取受限」，登入身分改變後以新身分重新載入目前團務
+    if (accessDeniedError) loadTripData(currentTripId);
   }, [isAdminAuthenticated, currentMember, fetchTripsList]);
 
   // Helper to save current trip to backend
