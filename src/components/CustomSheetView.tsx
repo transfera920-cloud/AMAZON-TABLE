@@ -290,7 +290,7 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
               <thead>
                 <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
                   {headers.map((h, hIdx) => (
-                    <th key={hIdx} className="py-2.5 px-3 border-r border-slate-800 last:border-r-0 min-w-[90px] whitespace-normal break-words">
+                    <th key={hIdx} className={`py-2.5 px-3 border-r border-slate-800 last:border-r-0 min-w-[90px] whitespace-normal break-words ${hIdx === 0 ? 'sticky left-0 z-10 bg-slate-950 shadow-[2px_0_4px_rgba(0,0,0,0.4)]' : ''}`}>
                       {isAdmin ? (
                         <input
                           type="text"
@@ -319,7 +319,7 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
                   filteredRows.map((row, rIdx) => (
                     <tr key={rIdx} className="hover:bg-slate-800/60 transition-colors">
                       {headers.map((h, cIdx) => (
-                        <td key={cIdx} className="py-2 px-3 border-r border-slate-800/80 last:border-r-0 break-words whitespace-normal">
+                        <td key={cIdx} className={`py-2 px-3 border-r border-slate-800/80 last:border-r-0 break-words whitespace-normal ${cIdx === 0 ? 'sticky left-0 z-10 bg-[#131924] shadow-[2px_0_4px_rgba(0,0,0,0.4)]' : ''}`}>
                           {isAdmin ? (
                             <input
                               type="text"
