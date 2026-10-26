@@ -846,15 +846,27 @@ function parsePlanSheet(rawJson: any[][], plan: ExpeditionPlan) {
   let currentDay: ItineraryDay | null = null;
   const days: ItineraryDay[] = [];
 
+  const CN_NUM: Record<string, number> = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
+  const cnToNum = (t: string): number => {
+    if (/^\d+$/.test(t)) return parseInt(t, 10);
+    if (t === '十') return 10;
+    if (t.startsWith('十')) return 10 + (CN_NUM[t[1]] ?? 0);
+    if (t.endsWith('十')) return (CN_NUM[t[0]] ?? 0) * 10;
+    if (t.length === 2 && t[1] !== '十' && t[0] === '十') return 10 + (CN_NUM[t[1]] ?? 0);
+    return CN_NUM[t] ?? 0;
+  };
+  const TIME_LINE = /^(\d{1,2}[:：]\d{2})\s*[｜|丨]?\s*(.*)/;
+
   for (let r = 0; r < rawJson.length; r++) {
     const row = (rawJson[r] || []).map(c => String(c ?? '').trim());
     const first = row[0] || '';
+    const isTimeLine = TIME_LINE.test(first);
 
     if (first.includes('活動名稱') && row[1]) {
       plan.title = row[1];
     } else if (first.includes('活動日期') && row[1]) {
       plan.dates = row[1];
-    } else if (first.includes('入山與下山地點') || first.includes('登山口')) {
+    } else if (!isTimeLine && (first.startsWith('入山與下山地點') || first.startsWith('登山口'))) {
       plan.trailhead = row[1] || first.replace(/入山與下山地點|登山口/g, '').replace(/[:：]/g, '').trim();
     } else if (first.includes('無線電頻率')) {
       plan.radioFrequency = first.replace('無線電頻率', '').replace(/[:：]/g, '').trim() || row[1] || '';
@@ -863,39 +875,47 @@ function parsePlanSheet(rawJson: any[][], plan: ExpeditionPlan) {
       if (row[3]) plan.leader.phone = row[3];
     }
 
-    // Detect DAY section e.g. D0, DAY1, DAY2, 第1天
-    const dayMatch = first.match(/^(D\d|DAY\s?\d|第\s?\d\s?天|預估行程)/i);
-    if (dayMatch) {
-      if (currentDay && currentDay.milestones.length > 0) {
-        days.push(currentDay);
+    if (isTimeLine) {
+      if (currentDay) {
+        const tm = first.match(TIME_LINE)!;
+        currentDay.milestones.push({
+          time: tm[1].replace('：', ':').padStart(5, '0'),
+          location: tm[2].trim() || row[1] || '地點',
+          notes: row[2] || '',
+        });
       }
+      continue;
+    }
+
+    // Day header: D0 / DAY1 / 第1天 / 第一天 ... (the bare "預估行程" heading is just a section title)
+    const dayMatch = first.match(/^(D\s?\d+|DAY\s?\d+|第\s?([一二三四五六七八九十\d]+)\s?天)\s*(.*)$/i);
+    if (dayMatch) {
+      if (currentDay) days.push(currentDay);
+      let label = dayMatch[1].replace(/\s/g, '').toUpperCase();
+      if (dayMatch[2]) label = `DAY${cnToNum(dayMatch[2])}`;
       currentDay = {
         id: `day_${Date.now()}_${days.length}`,
-        dayLabel: dayMatch[0].toUpperCase(),
-        title: row[1] || `${dayMatch[0]} 行程`,
+        dayLabel: label,
+        title: row[1] || dayMatch[3]?.trim() || `${label} 行程`,
         milestones: [],
       };
       continue;
     }
 
-    // Milestone with time e.g. 09:00 勝光登山口起登
     if (currentDay) {
-      const timeMatch = first.match(/^(\d{1,2}:\d{2})\s*(.*)/);
-      if (timeMatch) {
-        currentDay.milestones.push({
-          time: timeMatch[1],
-          location: timeMatch[2] || row[1] || '地點',
-          notes: row[2] || '',
-        });
-      } else if (first.includes('行走時間') || first.includes('預估時間')) {
-        currentDay.estimatedTime = first.replace(/行走時間|預估時間/g, '').replace(/[:：]/g, '').trim();
+      // "當日預估步程：8.3 小時" / "行走時間" / "預估時間"
+      if (/^當日預估步程|行走時間|預估時間/.test(first)) {
+        currentDay.estimatedTime = first.replace(/當日預估步程|行走時間|預估時間/g, '').replace(/[:：]/g, '').trim();
       }
+    }
+    // Anything after "預估總步程" ends the itinerary block (fees / notices below are not day data)
+    if (first.startsWith('預估總步程')) {
+      if (currentDay) days.push(currentDay);
+      currentDay = null;
     }
   }
 
-  if (currentDay && currentDay.milestones.length > 0) {
-    days.push(currentDay);
-  }
+  if (currentDay) days.push(currentDay);
 
   if (days.length > 0) {
     plan.itinerary = days;
