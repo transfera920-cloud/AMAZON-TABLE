@@ -643,23 +643,28 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
           {/* 1:1 Sheet Rows Table */}
           {currentSheet?.rawRows && currentSheet.rawRows.length > 0 ? (
             <div className="bg-[#131924] rounded-2xl border border-slate-800 shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="overflow-auto max-h-[calc(100dvh-7rem)]">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 [&_td]:border-b [&_td]:border-slate-800/80">
                   <thead>
-                    <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
-                      <th className="py-2.5 px-3 w-12 text-center">核對</th>
+                    <tr className="text-slate-200 font-semibold">
+                      <th className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-2.5 px-3 w-12 min-w-[48px] max-w-[48px] text-center">核對</th>
                       {currentSheet.rawHeaders && currentSheet.rawHeaders.length > 0 ? (
                         currentSheet.rawHeaders.map((h, i) => (
-                          <th key={i} className="py-2.5 px-3 font-semibold whitespace-nowrap">
+                          <th
+                            key={i}
+                            className={`sticky top-0 bg-slate-950 border-b border-slate-800 py-2.5 px-3 font-semibold whitespace-nowrap ${
+                              i === 0 ? 'left-[48px] z-30 min-w-[96px] border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
+                            }`}
+                          >
                             {h}
                           </th>
                         ))
                       ) : (
                         <>
-                          <th className="py-2.5 px-3">分類</th>
-                          <th className="py-2.5 px-3">裝備品名</th>
-                          <th className="py-2.5 px-3">必備/選配</th>
-                          <th className="py-2.5 px-3">備註與檢查重點</th>
+                          <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">分類</th>
+                          <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">裝備品名</th>
+                          <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">必備/選配</th>
+                          <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">備註與檢查重點</th>
                         </>
                       )}
                     </tr>
@@ -668,15 +673,21 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                     {currentSheet.rawRows.map((row, rIdx) => {
                       const rowKey = `eq_row_${rIdx}`;
                       const isChecked = !!checkedEquipments[rowKey];
+                      // 凍結欄必須是不透明底色，橫向捲動時才不會透出後面的內容
+                      const stickyBg = isChecked
+                        ? 'bg-[#0b2820] group-hover:bg-[#0e3328]'
+                        : rIdx % 2 === 1
+                          ? 'bg-[#161c29] group-hover:bg-[#1c2434]'
+                          : 'bg-[#131924] group-hover:bg-[#1a2233]';
                       return (
                         <tr
                           key={rIdx}
                           onClick={() => toggleEquipmentCheck(rowKey)}
-                          className={`cursor-pointer transition ${
+                          className={`group cursor-pointer transition ${
                             isChecked ? 'bg-emerald-950/40' : rIdx % 2 === 1 ? 'bg-slate-900/40 hover:bg-slate-800/60' : 'hover:bg-slate-800/40'
                           }`}
                         >
-                          <td className="py-2 px-3 text-center">
+                          <td className={`sticky left-0 z-10 w-12 min-w-[48px] max-w-[48px] py-2 px-3 text-center ${stickyBg}`}>
                             <input
                               type="checkbox"
                               checked={isChecked}
@@ -689,7 +700,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                             const isReq = strCell === '必備';
                             const isOptional = strCell === '選配';
                             return (
-                              <td key={cIdx} className={`py-2 px-3 ${isChecked && cIdx === 1 ? 'line-through text-slate-500' : ''}`}>
+                              <td key={cIdx} className={`py-2 px-3 ${cIdx === 0 ? `sticky left-[48px] z-10 min-w-[96px] border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)] ${stickyBg}` : ''} ${isChecked && cIdx === 1 ? 'line-through text-slate-500' : ''}`}>
                                 {isReq ? (
                                   <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-md text-[11px] font-bold">
                                     必備
@@ -783,13 +794,18 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
 
           {currentSheet?.rawRows && currentSheet.rawRows.length > 0 ? (
             <div className="bg-[#131924] rounded-2xl border border-slate-800 shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="overflow-auto max-h-[calc(100dvh-7rem)]">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 [&_td]:border-b [&_td]:border-slate-800/80">
                   {currentSheet.rawHeaders && currentSheet.rawHeaders.length > 0 && (
                     <thead>
-                      <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
+                      <tr className="text-slate-200 font-semibold">
                         {currentSheet.rawHeaders.map((h, i) => (
-                          <th key={i} className="py-2.5 px-3 font-semibold">
+                          <th
+                            key={i}
+                            className={`sticky top-0 bg-slate-950 border-b border-slate-800 py-2.5 px-3 font-semibold ${
+                              i === 0 ? 'left-0 z-30 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
+                            }`}
+                          >
                             {h}
                           </th>
                         ))}
@@ -798,9 +814,9 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                   )}
                   <tbody className="divide-y divide-slate-800/80 text-slate-300">
                     {currentSheet.rawRows.map((row, rIdx) => (
-                      <tr key={rIdx} className={`hover:bg-slate-800/40 transition ${rIdx % 2 === 1 ? 'bg-slate-900/40' : ''}`}>
+                      <tr key={rIdx} className={`group hover:bg-slate-800/40 transition ${rIdx % 2 === 1 ? 'bg-slate-900/40' : ''}`}>
                         {row.map((cell, cIdx) => (
-                          <td key={cIdx} className={`py-2 px-3 leading-relaxed whitespace-pre-wrap align-top ${cIdx === 0 ? 'font-bold text-slate-100 min-w-[120px]' : 'text-slate-300'}`}>
+                          <td key={cIdx} className={`py-2 px-3 leading-relaxed whitespace-pre-wrap align-top ${cIdx === 0 ? `font-bold text-slate-100 min-w-[120px] sticky left-0 z-10 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)] ${rIdx % 2 === 1 ? 'bg-[#161c29] group-hover:bg-[#1c2434]' : 'bg-[#131924] group-hover:bg-[#1a2233]'}` : 'text-slate-300'}`}>
                             {cell !== undefined && cell !== null && String(cell).trim() !== '' ? String(cell) : '-'}
                           </td>
                         ))}
@@ -875,13 +891,18 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
           {/* 1:1 Weather Sheet Table */}
           {currentSheet?.rawRows && currentSheet.rawRows.length > 0 ? (
             <div className="bg-[#131924] rounded-2xl border border-slate-800 shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="overflow-auto max-h-[calc(100dvh-7rem)]">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 [&_td]:border-b [&_td]:border-slate-800/80">
                   {currentSheet.rawHeaders && currentSheet.rawHeaders.length > 0 && (
                     <thead>
-                      <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
+                      <tr className="text-slate-200 font-semibold">
                         {currentSheet.rawHeaders.map((h, i) => (
-                          <th key={i} className="py-2.5 px-3 font-semibold">
+                          <th
+                            key={i}
+                            className={`sticky top-0 bg-slate-950 border-b border-slate-800 py-2.5 px-3 font-semibold ${
+                              i === 0 ? 'left-0 z-30 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
+                            }`}
+                          >
                             {h}
                           </th>
                         ))}
@@ -890,7 +911,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                   )}
                   <tbody className="divide-y divide-slate-800/80 text-slate-300">
                     {currentSheet.rawRows.map((row, rIdx) => (
-                      <tr key={rIdx} className={`hover:bg-slate-800/40 transition ${rIdx % 2 === 1 ? 'bg-slate-900/40' : ''}`}>
+                      <tr key={rIdx} className={`group hover:bg-slate-800/40 transition ${rIdx % 2 === 1 ? 'bg-slate-900/40' : ''}`}>
                         {row.map((cell, cIdx) => {
                           const strCell = String(cell ?? '').trim();
                           const urlMatch = strCell.match(/(https?:\/\/[^\s]+)/i);
@@ -898,7 +919,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                           const targetUrl = urlMatch ? urlMatch[0] : strCell;
 
                           return (
-                            <td key={cIdx} className={`py-2 px-3 align-middle ${cIdx === 0 ? 'font-bold text-slate-100' : 'text-slate-300'}`}>
+                            <td key={cIdx} className={`py-2 px-3 align-middle ${cIdx === 0 ? `font-bold text-slate-100 sticky left-0 z-10 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)] ${rIdx % 2 === 1 ? 'bg-[#161c29] group-hover:bg-[#1c2434]' : 'bg-[#131924] group-hover:bg-[#1a2233]'}` : 'text-slate-300'}`}>
                               {isUrl ? (
                                 <a
                                   href={targetUrl}
