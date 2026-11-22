@@ -20,7 +20,8 @@ import {
   ChevronUp,
   FileSpreadsheet,
   Zap,
-  Phone
+  Phone,
+  Mountain
 } from 'lucide-react';
 import { ExpeditionPlan, DynamicSheet, MemberSurvey } from '../types';
 
@@ -450,8 +451,19 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
                     </div>
                   </div>
 
+                  {/* 百岳數（僅供參考）— 卡片上直接可見 */}
+                  <div className="mt-3.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800 flex items-center justify-between gap-2">
+                    <div className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1">
+                      <Mountain className="w-3 h-3 text-teal-400" />
+                      <span>百岳數（僅供參考）</span>
+                    </div>
+                    <div className="text-sm font-black text-teal-300">
+                      {item.peaksCount !== '' && item.peaksCount !== undefined ? item.peaksCount : '-'}
+                    </div>
+                  </div>
+
                   {/* Long Hike & Self-Sufficiency Experience Box */}
-                  <div className="mt-3.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                  <div className="mt-2.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
                     <div className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1">
                       <Compass className="w-3 h-3 text-teal-400" />
                       <span>長程縱走經歷與自理能力</span>
@@ -559,6 +571,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
               <thead>
                 <tr className="bg-slate-950 text-slate-200 font-bold text-[11px] tracking-wide border-b border-slate-800">
                   <th className="py-3 px-3.5 sticky left-0 z-10 bg-slate-950 shadow-xs">稱呼 / 姓名</th>
+                  <th className="py-3 px-2.5 text-center whitespace-nowrap">百岳數(僅供參考)</th>
                   <th className="py-3 px-2.5 text-center">休息節奏(1h)</th>
                   <th className="py-3 px-3">長程縱走經歷 (自理)</th>
                   <th className="py-3 px-2.5 text-center">救護證照</th>
@@ -581,6 +594,10 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
                     <tr key={item.id} className={idx % 2 === 0 ? 'hover:bg-slate-800/40 transition' : 'bg-slate-900/30 hover:bg-slate-800/50 transition'}>
                       <td className="py-3 px-3.5 font-bold text-slate-100 sticky left-0 z-10 bg-inherit shadow-xs whitespace-nowrap">
                         <span>{item.name}</span>
+                      </td>
+
+                      <td className="py-3 px-2.5 text-center whitespace-nowrap font-black text-teal-300">
+                        {item.peaksCount !== '' && item.peaksCount !== undefined ? item.peaksCount : '-'}
                       </td>
 
                       <td className="py-3 px-2.5 text-center whitespace-nowrap">
