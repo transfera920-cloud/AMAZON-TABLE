@@ -26,6 +26,21 @@ import {
 import { ExpeditionPlan, DynamicSheet, MemberSurvey } from '../types';
 import { isTimestampHeader, stripTimestampFromAnswers } from '../utils/sheetFilters';
 
+/**
+ * 判斷「高山反應與病史備註」是否為「沒有狀況」：
+ * 空白、無、沒有、皆無、全無、都沒有、無過敏、無高反、正常、否、none… 都視為 OK（綠色，不列入高反/病史統計）。
+ * 只要內容有實際說明（例如「有高山反應」「無藥物過敏，其他病史…」）就仍視為需要注意。
+ */
+const NO_MEDICAL_ISSUE_RE =
+  /^(皆|全|都|均|通通|一律)?(無|沒有|沒|否|不曾|未曾)(任何|特殊|相關)?(高山?反應?|高反|病史|過敏|藥物過敏|不適|問題|症狀|狀況|異常|[、，,及和與\s])*$/;
+
+const isNoMedicalIssue = (val: unknown): boolean => {
+  const v = String(val ?? '').trim().toLowerCase().replace(/[。.!！~～]+$/g, '');
+  if (!v || v === '-') return true;
+  if (['正常', '無異常', '無過敏', 'none', 'no', 'n/a', 'na', 'ok', '無。'].includes(v)) return true;
+  return NO_MEDICAL_ISSUE_RE.test(v);
+};
+
 interface SurveyViewProps {
   plan: ExpeditionPlan;
   sheet?: DynamicSheet;
@@ -173,8 +188,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
       return v && v !== '否' && v !== '不' && v !== '不行' && v !== '無法' && v !== '不配合' && v !== '無' && v !== '-' && v !== 'no';
     }).length;
     const specialMedCount = surveyItems.filter(i => {
-      const v = (i.medicalHistory || '').trim();
-      return v && v !== '無' && v !== '否' && v !== '正常' && v !== '無過敏' && v !== '-';
+      return !isNoMedicalIssue(i.medicalHistory);
     }).length;
 
     // 長程縱走自理：空白、「無」、或以「無」開頭（如「無，要搭伙」）都視為不具備
@@ -216,8 +230,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
         return v && v !== '無' && v !== '否' && v !== '-';
       }
       if (filterType === 'medicalAttention') {
-        const v = item.medicalHistory.trim();
-        return v && v !== '無' && v !== '否' && v !== '正常' && v !== '無過敏' && v !== '-';
+        return !isNoMedicalIssue(item.medicalHistory);
       }
       if (filterType === 'highPeaks') {
         const v = item.paceAgreement.trim().toLowerCase();
@@ -236,8 +249,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
   }, [surveyItems, searchQuery, filterType, sortBy]);
 
   const hasSpecialMed = (val: string) => {
-    const v = val.trim();
-    return v && v !== '無' && v !== '否' && v !== '正常' && v !== '無過敏' && v !== '-';
+    return !isNoMedicalIssue(val);
   };
 
   const hasCert = (val: string) => {
