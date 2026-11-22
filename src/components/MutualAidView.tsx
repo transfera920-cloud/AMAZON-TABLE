@@ -11,6 +11,7 @@ import {
   Users
 } from 'lucide-react';
 import { ExpeditionPlan, DynamicSheet } from '../types';
+import { Linkify } from '../utils/Linkify';
 
 interface MutualAidViewProps {
   plan: ExpeditionPlan;
@@ -204,10 +205,10 @@ export const MutualAidView: React.FC<MutualAidViewProps> = ({ plan, sheet }) => 
     }
 
     // Generic URL
-    if (strVal.startsWith('http://') || strVal.startsWith('https://')) {
+    if (/^(https?:\/\/|www\.)/i.test(strVal)) {
       return (
         <a
-          href={strVal}
+          href={/^https?:\/\//i.test(strVal) ? strVal : `https://${strVal}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 underline text-xs font-medium"
@@ -314,7 +315,7 @@ export const MutualAidView: React.FC<MutualAidViewProps> = ({ plan, sheet }) => 
                     key={cIdx}
                     className="py-2.5 px-4 border-r border-slate-800 last:border-r-0 whitespace-nowrap text-center min-w-[100px]"
                   >
-                    <span>{colName || `組別 ${cIdx + 1}`}</span>
+                    <span>{colName ? <Linkify text={colName} /> : `組別 ${cIdx + 1}`}</span>
                   </th>
                 ))}
               </tr>

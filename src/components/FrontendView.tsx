@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { ExpeditionPlan, ItineraryDay, NoticeSection, EquipmentItem, DynamicSheet, MemberPII } from '../types';
 import { CustomSheetView } from './CustomSheetView';
+import { Linkify } from '../utils/Linkify';
 import { SurveyView } from './SurveyView';
 import { MutualAidView } from './MutualAidView';
 
@@ -656,7 +657,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               i === 0 ? 'left-[48px] z-30 min-w-[96px] border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
                             }`}
                           >
-                            {h}
+                            <Linkify text={h} />
                           </th>
                         ))
                       ) : (
@@ -806,7 +807,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               i === 0 ? 'left-0 z-30 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
                             }`}
                           >
-                            {h}
+                            <Linkify text={h} />
                           </th>
                         ))}
                       </tr>
@@ -903,7 +904,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               i === 0 ? 'left-0 z-30 border-r border-slate-700 shadow-[2px_0_4px_rgba(0,0,0,0.35)]' : 'z-20'
                             }`}
                           >
-                            {h}
+                            <Linkify text={h} />
                           </th>
                         ))}
                       </tr>

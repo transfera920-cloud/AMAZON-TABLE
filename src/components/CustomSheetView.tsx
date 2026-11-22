@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DynamicSheet, ExpeditionPlan } from '../types';
 import { Table, Search, Plus, Trash2, Edit3, Check, FileSpreadsheet, Eye, MessageCircle, ExternalLink, CloudSun } from 'lucide-react';
 import { formatExcelTimeToHHMM, isExcelSerialTime } from '../utils/excelParser';
+import { Linkify } from '../utils/Linkify';
 
 interface CustomSheetViewProps {
   sheet: DynamicSheet;
@@ -105,8 +106,8 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
     }
 
     // Weather forecast URLs or cells in weather sheets/columns (User mandate: 氣象預報超聯結名稱使用原文字)
-    const urlMatch = strVal.match(/(https?:\/\/[^\s]+)/i);
-    const isUrl = !!urlMatch || strVal.startsWith('http://') || strVal.startsWith('https://');
+    const urlMatch = strVal.match(/((?:https?:\/\/|www\.)[^\s]+)/i);
+    const isUrl = !!urlMatch;
     const targetUrl = urlMatch ? urlMatch[0] : strVal;
 
     if (isUrl && (h.includes('氣象') || h.includes('天氣') || h.includes('預報') || h.includes('觀測') || sheet.name.includes('氣象') || strVal.includes('cwa.gov.tw') || strVal.includes('windy') || strVal.includes('weather'))) {
@@ -126,21 +127,9 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
       );
     }
 
-    // Generic URLs (non-LINE, non-weather) rendered with original text hyperlink without breaking
+    // Generic URLs (non-LINE, non-weather): 文字中所有網址都轉成超連結，保留其餘原文
     if (isUrl) {
-      const displayText = urlMatch && strVal !== targetUrl ? strVal.replace(targetUrl, '').trim() || strVal : strVal;
-      return (
-        <a
-          href={targetUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 underline font-medium break-all transition hover:bg-sky-950/40 px-1 py-0.5 rounded"
-          title={`點擊開啟：${targetUrl}`}
-        >
-          <span>{displayText}</span>
-          <ExternalLink className="w-3 h-3 text-sky-400 shrink-0 inline-block align-middle ml-0.5" />
-        </a>
-      );
+      return <span className="break-all whitespace-pre-wrap"><Linkify text={strVal} /></span>;
     }
 
     // Time columns or Excel serial time floats MUST be formatted to HH:MM
@@ -299,7 +288,7 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
                           className="w-full bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-xs text-white font-bold focus:ring-1 focus:ring-emerald-400"
                         />
                       ) : (
-                        <span>{h}</span>
+                        <span><Linkify text={h} /></span>
                       )}
                     </th>
                   ))}
