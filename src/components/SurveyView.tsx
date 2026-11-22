@@ -458,19 +458,8 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
                     </div>
                   </div>
 
-                  {/* 百岳數（僅供參考）— 卡片上直接可見 */}
-                  <div className="mt-3.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800 flex items-center justify-between gap-2">
-                    <div className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1">
-                      <Mountain className="w-3 h-3 text-teal-400" />
-                      <span>百岳數（僅供參考）</span>
-                    </div>
-                    <div className="text-sm font-black text-teal-300">
-                      {item.peaksCount !== '' && item.peaksCount !== undefined ? item.peaksCount : '-'}
-                    </div>
-                  </div>
-
                   {/* Long Hike & Self-Sufficiency Experience Box */}
-                  <div className="mt-2.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                  <div className="mt-3.5 p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
                     <div className="text-[10px] uppercase font-black text-slate-400 tracking-wider flex items-center gap-1">
                       <Compass className="w-3 h-3 text-teal-400" />
                       <span>長程縱走經歷與自理能力</span>
@@ -480,22 +469,35 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
                     </div>
                   </div>
 
-                  {/* Medical / Altitude Sickness Note */}
-                  <div className={`mt-2.5 p-2.5 rounded-2xl text-xs border ${
-                    medAlert
-                      ? 'bg-amber-950/30 border-amber-800/40 text-amber-200'
-                      : 'bg-emerald-950/20 border-emerald-800/30 text-emerald-300'
-                  }`}>
-                    <div className="flex items-center gap-1.5 font-bold text-[11px]">
-                      {medAlert ? (
-                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      ) : (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      )}
-                      <span>高山反應與病史備註：</span>
+                  <div className="mt-2.5 flex items-stretch gap-2.5">
+                    {/* Medical / Altitude Sickness Note */}
+                    <div className={`flex-1 min-w-0 p-2.5 rounded-2xl text-xs border ${
+                      medAlert
+                        ? 'bg-amber-950/30 border-amber-800/40 text-amber-200'
+                        : 'bg-emerald-950/20 border-emerald-800/30 text-emerald-300'
+                    }`}>
+                      <div className="flex items-center gap-1.5 font-bold text-[11px]">
+                        {medAlert ? (
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        )}
+                        <span>高山反應與病史備註：</span>
+                      </div>
+                      <div className="mt-0.5 pl-5 text-xs font-medium break-words text-slate-300">
+                        {item.medicalHistory || '無病史與高反紀錄'}
+                      </div>
                     </div>
-                    <div className="mt-0.5 pl-5 text-xs font-medium break-words text-slate-300">
-                      {item.medicalHistory || '無病史與高反紀錄'}
+                    {/* 百岳數（僅供參考）— 與高山反應並列 */}
+                    <div className="shrink-0 min-w-[96px] p-2.5 bg-slate-900/60 rounded-2xl border border-slate-800 flex flex-col justify-center text-center">
+                      <div className="text-[10px] font-black text-slate-400 tracking-wider flex items-center justify-center gap-1 whitespace-nowrap">
+                        <Mountain className="w-3 h-3 text-teal-400" />
+                        <span>百岳數</span>
+                      </div>
+                      <div className="text-[9px] text-slate-500 leading-tight">（僅供參考）</div>
+                      <div className="mt-1 text-base font-black text-teal-300 break-words leading-tight">
+                        {item.peaksCount !== '' && item.peaksCount !== undefined ? item.peaksCount : '-'}
+                      </div>
                     </div>
                   </div>
 
