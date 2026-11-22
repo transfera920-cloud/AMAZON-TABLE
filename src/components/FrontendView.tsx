@@ -88,7 +88,45 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
 
   const visibleSheets = useMemo(() => allSheets.filter(s => !isHiddenFrontendSheet(s)), [allSheets]);
 
-  const [activeSheetId, setActiveSheetId] = useState<string>(visibleSheets[0]?.id || 'sheet-progress');
+  // 從網址 #hash 還原分頁（重新整理或分享連結時停留在同一分頁）
+  const readSheetIdFromHash = (): string | null => {
+    try {
+      const raw = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
+      return raw && visibleSheets.some(s => s.id === raw) ? raw : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [activeSheetId, setActiveSheetId] = useState<string>(
+    readSheetIdFromHash() || visibleSheets[0]?.id || 'sheet-progress'
+  );
+
+  // 切換分頁時寫入瀏覽器歷史紀錄，讓手機「上一頁」回到網站內的上一個分頁，
+  // 而不是直接跳回 LINE（外部來源頁）
+  const selectSheet = (id: string) => {
+    if (id === activeSheetId) return;
+    try {
+      window.history.pushState({ sheetId: id }, '', `#${encodeURIComponent(id)}`);
+    } catch {
+      /* 部分環境不支援 pushState，退回單純切換 */
+    }
+    setActiveSheetId(id);
+  };
+
+  // 使用者按上一頁／下一頁時，依歷史紀錄切回對應分頁
+  React.useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const fromState = e.state && typeof e.state.sheetId === 'string' ? e.state.sheetId : null;
+      const target = fromState || readSheetIdFromHash() || visibleSheets[0]?.id;
+      if (target && visibleSheets.some(s => s.id === target)) {
+        setActiveSheetId(target);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleSheets]);
   const [selectedDayId, setSelectedDayId] = useState<string>(plan.itinerary[0]?.id || '');
   const [progressSearch, setProgressSearch] = useState('');
   const [piiSearch, setPiiSearch] = useState('');
@@ -177,7 +215,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
           return (
             <button
               key={sheet.id}
-              onClick={() => setActiveSheetId(sheet.id)}
+              onClick={() => selectSheet(sheet.id)}
               className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
                 isActive
                   ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500'
@@ -235,18 +273,18 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
 
             {/* Progress Table */}
             <div className="bg-[#131924] rounded-2xl border border-slate-800 shadow-md overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse min-w-[800px]">
+              <div className="overflow-auto max-h-[calc(100dvh-7rem)]">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 min-w-[800px] [&_td]:border-b [&_td]:border-slate-800/80">
                   <thead>
-                    <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
-                      <th className="py-3 px-3 w-16 text-center">角色</th>
-                      <th className="py-3 px-3 sticky left-0 bg-slate-950 z-10 w-24">姓名</th>
+                    <tr className="text-slate-200 font-semibold">
+                      <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 w-16 text-center whitespace-nowrap">角色</th>
+                      <th className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-3 px-3 w-24 whitespace-nowrap">姓名</th>
                       {plan.progressTasks.map(task => (
-                        <th key={task.id} className="py-3 px-2 text-center whitespace-nowrap min-w-[80px]">
+                        <th key={task.id} className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-2 text-center whitespace-nowrap min-w-[80px]">
                           {task.label}
                         </th>
                       ))}
-                      <th className="py-3 px-3 min-w-[100px] text-center">付款狀態</th>
+                      <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 min-w-[100px] text-center whitespace-nowrap">付款狀態</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/80 text-slate-300">
@@ -271,7 +309,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               {member.role}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 font-semibold text-slate-100 sticky left-0 bg-[#131924] shadow-xs">
+                          <td className="py-2.5 px-3 font-semibold text-slate-100 sticky left-0 z-10 bg-[#131924] shadow-xs whitespace-nowrap border-b border-slate-800/80">
                             <div>{member.name}</div>
                             {member.nickname && (
                               <div className="text-[10px] text-slate-400 font-normal">({member.nickname})</div>
