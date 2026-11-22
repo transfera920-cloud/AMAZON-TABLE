@@ -76,23 +76,30 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
       const spareIdx = headers.findIndex(h => h.includes('預備日'));
       const workoutIdx = headers.findIndex(h => h.includes('運動狀況') || h.includes('結算') || h.includes('每週日'));
       const aidIdx = headers.findIndex(h => h.includes('證照') || h.includes('救護') || h.includes('急救') || h.includes('BLS') || h.includes('WAFA'));
-      const peakIdx = headers.findIndex(h => h.includes('百岳數') || h.includes('百岳'));
+      const peakIdx = (() => {
+        // 優先精準比對「百岳數」欄；找不到才退而求其次，且排除「攀登百岳…預備日」這類問答題欄位
+        const exact = headers.findIndex(h => h.includes('百岳數'));
+        if (exact !== -1) return exact;
+        return headers.findIndex(h => h.includes('百岳') && !h.includes('預備日') && !h.includes('縱走'));
+      })();
 
       return sheet.rawRows.map((row, rIdx) => {
         const getVal = (idx: number) => (idx !== -1 && row[idx] !== undefined ? String(row[idx]).trim() : '');
         const name = getVal(nameIdx) || `隊員 ${rIdx + 1}`;
         const peaksRaw = getVal(peakIdx);
-        const peaksNum = parseInt(peaksRaw.replace(/[^0-9]/g, ''), 10) || 0;
+        const peaksNum = parseInt((peaksRaw.match(/\d+/) || ['0'])[0], 10) || 0; // 「約10-15」取第一個數字 10，「40+」取 40
 
         const rawAnswers: Record<string, string> = {};
         headers.forEach((h, cIdx) => {
+          // A 欄「時間戳記」不納入統計與問答顯示
+          if (cIdx === timeIdx) return;
           rawAnswers[h] = getVal(cIdx);
         });
 
         return {
           id: `survey_row_${rIdx}`,
           name,
-          timestamp: getVal(timeIdx),
+          timestamp: '',
           mutualCare: getVal(careIdx) || '是',
           longHikeExp: getVal(hikeIdx) || '無',
           routeKnowledge: getVal(routeIdx) || '知道',
