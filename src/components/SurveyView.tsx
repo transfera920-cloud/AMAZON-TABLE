@@ -24,6 +24,7 @@ import {
   Mountain
 } from 'lucide-react';
 import { ExpeditionPlan, DynamicSheet, MemberSurvey } from '../types';
+import { isTimestampHeader, stripTimestampFromAnswers } from '../utils/sheetFilters';
 
 interface SurveyViewProps {
   plan: ExpeditionPlan;
@@ -64,7 +65,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
     if (sheet && sheet.rawHeaders && sheet.rawHeaders.length > 0 && sheet.rawRows && sheet.rawRows.length > 0) {
       const headers = sheet.rawHeaders;
       const nameIdx = headers.findIndex(h => h.includes('稱呼') || h.includes('姓名') || h.includes('暱稱'));
-      const timeIdx = headers.findIndex(h => h.includes('時間戳記') || h.includes('時間'));
+      const timeIdx = headers.findIndex(h => isTimestampHeader(h));
       const careIdx = headers.findIndex(h => h.includes('互相照顧') || h.includes('共同決定'));
       const hikeIdx = headers.findIndex(h => h.includes('縱走') || h.includes('行程及是否自理') || h.includes('長程'));
       const routeIdx = headers.findIndex(h => h.includes('路線') || h.includes('難度等級') || h.includes('基本資料'));
@@ -129,7 +130,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
         return {
           id: s.memberId || `survey_${idx}`,
           name: s.name,
-          timestamp: s.timestamp || '',
+          timestamp: '',
           mutualCare: s.mutualCareAgreement || '是',
           longHikeExp: s.longHikeExp || '無',
           routeKnowledge: s.routeKnowledgeConfirmed || '確認知道',
@@ -143,7 +144,7 @@ export const SurveyView: React.FC<SurveyViewProps> = ({ plan, sheet, isAdmin }) 
           firstAidCert: s.firstAidCert || '無',
           peaksCount: s.peaksCount || (peaksNum > 0 ? peaksNum : '-'),
           peaksCountNum: peaksNum,
-          rawAnswers: s.rawAnswers || {},
+          rawAnswers: stripTimestampFromAnswers(s.rawAnswers || {}),
         };
       });
     }

@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ExpeditionPlan, MemberPII, MemberProgress, ShuttleRoute, ItineraryDay, NoticeSection, EquipmentItem, MemberSurvey, DynamicSheet } from '../types';
+import { stripTimestampColumns, isTimestampHeader } from './sheetFilters';
 
 /**
  * Checks if a value is an Excel serial time float (e.g. 0.7291666666666666, 0.8333333333333334).
@@ -305,12 +306,15 @@ export async function parseExcelFile(file: File, _previousPlan?: ExpeditionPlan)
       });
     });
 
+    // Google 表單的「時間戳記」欄位一律不保留（不顯示、不列入統計）
+    const cleaned = stripTimestampColumns(headers, rows);
+
     parsedDynamicSheets.push({
       id: `sheet_${idx}_${Date.now()}`,
       name: sheetName,
       sheetType: detectedType,
-      rawHeaders: headers,
-      rawRows: rows,
+      rawHeaders: cleaned.headers,
+      rawRows: cleaned.rows,
     });
   }
 
@@ -994,10 +998,10 @@ function parseSurveySheet(rawJson: any[][], plan: ExpeditionPlan): number {
     headers.forEach((h, idx) => {
       const val = String(row[idx] ?? '').trim();
       if (!val) return;
+      if (isTimestampHeader(h)) return; // 時間戳記不顯示、不統計
       rawAnswers[h] = val;
 
-      if (h.includes('時間戳記')) survey.timestamp = val;
-      else if (h.includes('互相照顧') || h.includes('共同決定')) survey.mutualCareAgreement = val;
+      if (h.includes('互相照顧') || h.includes('共同決定')) survey.mutualCareAgreement = val;
       else if (h.includes('縱走') || h.includes('行程及是否自理')) survey.longHikeExp = val;
       else if (h.includes('路線') || h.includes('難度等級') || h.includes('基本資料')) survey.routeKnowledgeConfirmed = val;
       else if (h.includes('離線地圖') || h.includes('座標') || h.includes('GPX')) survey.offlineMapSkill = val;

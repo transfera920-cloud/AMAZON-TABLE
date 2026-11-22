@@ -33,6 +33,7 @@ import {
 import { ExpeditionPlan, ItineraryDay, NoticeSection, EquipmentItem, DynamicSheet, MemberPII } from '../types';
 import { CustomSheetView } from './CustomSheetView';
 import { Linkify } from '../utils/Linkify';
+import { stripTimestampFromSheet } from '../utils/sheetFilters';
 import { SurveyView } from './SurveyView';
 import { MutualAidView } from './MutualAidView';
 
@@ -140,7 +141,9 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
     }
   }, [visibleSheets, activeSheetId]);
 
-  const currentSheet = visibleSheets.find(s => s.id === activeSheetId) || visibleSheets[0] || allSheets[0];
+  const rawCurrentSheet = visibleSheets.find(s => s.id === activeSheetId) || visibleSheets[0] || allSheets[0];
+  // Google 表單的「時間戳記」欄位不顯示、不列入統計
+  const currentSheet = useMemo(() => stripTimestampFromSheet(rawCurrentSheet), [rawCurrentSheet]);
   const activeTab = currentSheet ? currentSheet.sheetType : 'customTable';
   const safetySheet = visibleSheets.find(s => s.sheetType === 'safety');
 
