@@ -21,5 +21,12 @@
       "binding": "TRIPS_KV",
       "id": "bf33efa9b16f4861a9efef5ceeae75c7"
     }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "amazon-table-db",
+      "database_id": "2599a1bd-2ca9-435a-bb06-ab5403670421"
+    }
   ]
 }
