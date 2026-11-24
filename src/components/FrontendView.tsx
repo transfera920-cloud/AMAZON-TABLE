@@ -424,10 +424,10 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
               <table className="w-auto text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-950 text-slate-200 font-semibold border-b border-slate-800">
-                    <th className="py-2 px-3 whitespace-nowrap">姓名</th>
-                    <th className="py-2 px-3 whitespace-nowrap">聯絡電話</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-emerald-300">緊急聯絡人</th>
-                    <th className="py-2 px-3 whitespace-nowrap text-emerald-300">聯絡人電話</th>
+                    <th className="py-2 px-2 sm:px-3 whitespace-nowrap">姓名 / 電話</th>
+                    <th className="py-2 px-3 whitespace-nowrap hidden sm:table-cell">聯絡電話</th>
+                    <th className="py-2 px-2 sm:px-3 whitespace-nowrap text-emerald-300">緊急聯絡人 / 電話</th>
+                    <th className="py-2 px-3 whitespace-nowrap text-emerald-300 hidden sm:table-cell">聯絡人電話</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80 text-slate-300">
@@ -443,25 +443,7 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                       const cleanMemberPhone = (member.phone || '').replace(/\s+/g, '');
                       const cleanEmergencyPhone = (member.emergencyPhone || '').replace(/\s+/g, '');
 
-                      return (
-                        <tr
-                          key={member.id}
-                          className={`hover:bg-slate-800/60 transition ${
-                            isLeader ? 'bg-emerald-950/30 font-medium' : idx % 2 === 1 ? 'bg-slate-900/40' : ''
-                          }`}
-                        >
-                          <td className="py-1.5 px-3 font-bold text-slate-100 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              <span>{member.name}</span>
-                              {isLeader && (
-                                <span className="px-1 py-0.2 bg-emerald-600 text-white text-[10px] font-bold rounded">
-                                  領隊
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-1.5 px-3 whitespace-nowrap">
-                            {member.phone ? (
+                      const memberPhoneEl = member.phone ? (
                               <a
                                 href={`tel:${cleanMemberPhone}`}
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-800/80 hover:bg-emerald-950/50 text-slate-200 hover:text-emerald-300 rounded font-mono text-xs font-medium transition border border-slate-700/80"
@@ -472,13 +454,8 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               </a>
                             ) : (
                               <span className="text-slate-600">-</span>
-                            )}
-                          </td>
-                          <td className="py-1.5 px-3 font-semibold text-slate-200 whitespace-nowrap">
-                            {member.emergencyContact || <span className="text-slate-600">-</span>}
-                          </td>
-                          <td className="py-1.5 px-3 whitespace-nowrap">
-                            {member.emergencyPhone ? (
+                            );
+                      const emergencyPhoneEl = member.emergencyPhone ? (
                               <a
                                 href={`tel:${cleanEmergencyPhone}`}
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 rounded font-mono text-xs font-bold transition border border-emerald-500/30"
@@ -489,8 +466,33 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
                               </a>
                             ) : (
                               <span className="text-slate-600">-</span>
-                            )}
+                            );
+
+                      return (
+                        <tr
+                          key={member.id}
+                          className={`hover:bg-slate-800/60 transition ${
+                            isLeader ? 'bg-emerald-950/30 font-medium' : idx % 2 === 1 ? 'bg-slate-900/40' : ''
+                          }`}
+                        >
+                          <td className="py-1.5 px-2 sm:px-3 font-bold text-slate-100 whitespace-nowrap align-top sm:align-middle">
+                            <div className="flex items-center gap-1.5">
+                              <span>{member.name}</span>
+                              {isLeader && (
+                                <span className="px-1 py-0.2 bg-emerald-600 text-white text-[10px] font-bold rounded">
+                                  領隊
+                                </span>
+                              )}
+                            </div>
+                            {/* 手機：電話顯示在姓名下方，避免需要左右捲動 */}
+                            <div className="sm:hidden mt-1 font-normal">{memberPhoneEl}</div>
                           </td>
+                          <td className="py-1.5 px-3 whitespace-nowrap hidden sm:table-cell">{memberPhoneEl}</td>
+                          <td className="py-1.5 px-2 sm:px-3 font-semibold text-slate-200 whitespace-nowrap align-top sm:align-middle">
+                            <div>{member.emergencyContact || <span className="text-slate-600">-</span>}</div>
+                            <div className="sm:hidden mt-1 font-normal">{emergencyPhoneEl}</div>
+                          </td>
+                          <td className="py-1.5 px-3 whitespace-nowrap hidden sm:table-cell">{emergencyPhoneEl}</td>
                         </tr>
                       );
                     })
