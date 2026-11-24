@@ -178,7 +178,23 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
 
   const selectedDay = plan.itinerary.find(d => d.id === selectedDayId) || plan.itinerary[0];
 
-  const getTabIcon = (sheetType: DynamicSheet['sheetType']) => {
+  const getTabIcon = (sheetType: DynamicSheet['sheetType'], isActive = false) => {
+    // 被選取時按鈕底色是 emerald-600，圖示一律用白色，避免和底色同色而隱形
+    if (isActive) {
+      const cls = 'w-4 h-4 text-white shrink-0';
+      switch (sheetType) {
+        case 'overview': case 'survey': return <Compass className={cls} />;
+        case 'progress': return <CheckCircle2 className={cls} />;
+        case 'pii': return <Shield className={cls} />;
+        case 'shuttle': return <Bus className={cls} />;
+        case 'itinerary': return <Calendar className={cls} />;
+        case 'equipment': return <Backpack className={cls} />;
+        case 'notices': return <FileText className={cls} />;
+        case 'safety': return <CloudSun className={cls} />;
+        case 'mutualAid': return <HeartHandshake className={cls} />;
+        default: return <FileSpreadsheet className={cls} />;
+      }
+    }
     switch (sheetType) {
       case 'overview': return <Compass className="w-4 h-4 text-emerald-500 shrink-0" />;
       case 'progress': return <CheckCircle2 className="w-4 h-4 text-teal-500 shrink-0" />;
@@ -219,13 +235,13 @@ export const FrontendView: React.FC<FrontendViewProps> = ({ plan }) => {
             <button
               key={sheet.id}
               onClick={() => selectSheet(sheet.id)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
+              className={`flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all text-center ${
                 isActive
                   ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500'
                   : 'text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80'
               }`}
             >
-              {getTabIcon(sheet.sheetType)}
+              {getTabIcon(sheet.sheetType, isActive)}
               <span className="break-words">{sheet.name}</span>
               {sheet.sheetType === 'progress' && plan.members.length > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isActive ? 'bg-emerald-800 text-emerald-100' : 'bg-slate-800 text-slate-300'}`}>

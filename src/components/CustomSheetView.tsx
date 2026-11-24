@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DynamicSheet, ExpeditionPlan } from '../types';
-import { Table, Search, Plus, Trash2, Edit3, Check, FileSpreadsheet, Eye, MessageCircle, ExternalLink, CloudSun } from 'lucide-react';
+import { Table, Search, Plus, Trash2, Edit3, Check, FileSpreadsheet, Eye, MessageCircle, ExternalLink, CloudSun, ChevronDown, X } from 'lucide-react';
 import { formatExcelTimeToHHMM, isExcelSerialTime } from '../utils/excelParser';
 import { Linkify } from '../utils/Linkify';
 
@@ -10,6 +10,78 @@ interface CustomSheetViewProps {
   plan: ExpeditionPlan;
   onUpdatePlan: (updatedPlan: ExpeditionPlan) => void;
 }
+
+/** 步程資訊等「圖片依 DAY 分組」的工作表：每個 DAY 一張可展開的卡片，展開後由上到下顯示圖片 */
+const DayBlocksView: React.FC<{ sheet: DynamicSheet }> = ({ sheet }) => {
+  const blocks = sheet.dayBlocks || [];
+  const [openIdx, setOpenIdx] = useState<Record<number, boolean>>({ 0: true });
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-4 animate-fadeIn w-full max-w-full">
+      <div className="bg-[#131924] rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-md flex items-center gap-3">
+        <div className="p-2.5 bg-emerald-500/15 text-emerald-400 rounded-xl border border-emerald-500/30 shrink-0">
+          <FileSpreadsheet className="w-5 h-5" />
+        </div>
+        <h3 className="text-base sm:text-lg font-bold text-white">{sheet.name}</h3>
+      </div>
+
+      <div className="space-y-3">
+        {blocks.map((b, idx) => {
+          const isOpen = !!openIdx[idx];
+          return (
+            <div key={`${b.label}_${idx}`} className="bg-[#131924] rounded-2xl border border-slate-800 shadow-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setOpenIdx(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-slate-800/50 transition"
+                aria-expanded={isOpen}
+              >
+                <span className="font-bold text-white text-sm sm:text-base">{b.label}</span>
+                <span className="flex items-center gap-2 text-xs text-slate-400">
+                  {b.images.length > 0 && <span>{b.images.length} 張圖片</span>}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </span>
+              </button>
+              {isOpen && (
+                <div className="px-3 sm:px-4 pb-4 space-y-3 border-t border-slate-800 pt-3">
+                  {b.images.length === 0 && <p className="text-sm text-slate-400">此區塊沒有圖片</p>}
+                  {b.images.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt={`${b.label} 圖 ${i + 1}`}
+                      loading="lazy"
+                      onClick={() => setZoomSrc(src)}
+                      className="w-full h-auto rounded-xl border border-slate-700 cursor-zoom-in bg-slate-900"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {zoomSrc && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-3 cursor-zoom-out"
+          onClick={() => setZoomSrc(null)}
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 p-2 rounded-full bg-slate-800 text-white hover:bg-slate-700"
+            onClick={() => setZoomSrc(null)}
+            aria-label="關閉"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img src={zoomSrc} alt="放大圖片" className="max-w-full max-h-full object-contain rounded-lg" />
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
   sheet,
@@ -183,6 +255,10 @@ export const CustomSheetView: React.FC<CustomSheetViewProps> = ({
     const q = searchQuery.toLowerCase();
     return r.some(c => String(c || '').toLowerCase().includes(q));
   });
+
+  if (sheet.dayBlocks && sheet.dayBlocks.length > 0) {
+    return <DayBlocksView sheet={sheet} />;
+  }
 
   return (
     <div className="space-y-4 animate-fadeIn w-full max-w-full">

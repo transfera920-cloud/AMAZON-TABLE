@@ -122,6 +122,8 @@ export interface DynamicSheet {
   rawHeaders?: string[];
   rawRows?: (string | number | boolean)[][];
   description?: string;
+  /** 從 xlsx 內嵌圖片取出、依 DAY 標題分組的步程圖片（dataURL） */
+  dayBlocks?: { label: string; images: string[] }[];
 }
 
 export interface TripSummary {

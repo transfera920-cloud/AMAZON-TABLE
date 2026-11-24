@@ -164,7 +164,7 @@ export default function App() {
           setPlan(data.trip);
           setCurrentTripId(tripIdToLoad);
           sessionStorage.setItem('expedition_current_trip_id', tripIdToLoad);
-          sessionStorage.setItem(`mountaineering_plan_${tripIdToLoad}`, JSON.stringify(data.trip));
+          try { sessionStorage.setItem(`mountaineering_plan_${tripIdToLoad}`, JSON.stringify(data.trip)); } catch { /* 含圖片時可能超過瀏覽器暫存上限，略過 */ }
           setIsCloudSynced(true);
 
           // Update browser URL query param without full reload
@@ -226,7 +226,7 @@ export default function App() {
 
   // Persist plan changes to local cache and debounce server save
   useEffect(() => {
-    sessionStorage.setItem(`mountaineering_plan_${currentTripId}`, JSON.stringify(plan));
+    try { sessionStorage.setItem(`mountaineering_plan_${currentTripId}`, JSON.stringify(plan)); } catch { /* 含圖片時可能超過瀏覽器暫存上限，略過 */ }
 
     if (isFirstMountRef.current) {
       isFirstMountRef.current = false;

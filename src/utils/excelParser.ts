@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { ExpeditionPlan, MemberPII, MemberProgress, ShuttleRoute, ItineraryDay, NoticeSection, EquipmentItem, MemberSurvey, DynamicSheet } from '../types';
 import { stripTimestampColumns, isTimestampHeader } from './sheetFilters';
+import { extractSheetImages, buildDayBlocks } from './xlsxImages';
 
 /**
  * Checks if a value is an Excel serial time float (e.g. 0.7291666666666666, 0.8333333333333334).
@@ -170,6 +171,14 @@ export async function parseExcelFile(file: File, _previousPlan?: ExpeditionPlan)
   const workbook = XLSX.read(data, { type: 'array' });
   const sheetNames = workbook.SheetNames;
 
+  // SheetJS 讀不到浮動圖片，另外用 JSZip 從 xlsx 取出（失敗不影響文字資料匯入）
+  let sheetImages: Record<string, { row: number; dataUrl: string }[]> = {};
+  try {
+    sheetImages = await extractSheetImages(data);
+  } catch (e) {
+    console.warn('讀取 Excel 內嵌圖片失敗，略過圖片：', e);
+  }
+
   // 1. Clean slate plan initialized from filename
   const newPlan: ExpeditionPlan = createEmptyPlan(file.name);
   const logs: string[] = [];
@@ -309,12 +318,22 @@ export async function parseExcelFile(file: File, _previousPlan?: ExpeditionPlan)
     // Google 表單的「時間戳記」欄位一律不保留（不顯示、不列入統計）
     const cleaned = stripTimestampColumns(headers, rows);
 
+    // 有內嵌圖片的工作表：依 A 欄的 DAY 標題把圖片分組，改用圖文卡片顯示
+    const imgs = sheetImages[sheetName];
+    const rowOffset = worksheet['!ref'] ? XLSX.utils.decode_range(worksheet['!ref']).s.r : 0;
+    const dayBlocks = imgs && imgs.length > 0 ? buildDayBlocks(rawJson, imgs, rowOffset) : undefined;
+    if (dayBlocks && dayBlocks.length > 0) {
+      detectedType = 'customTable';
+      logs.push(`工作表【${sheetName}】: 載入 ${imgs!.length} 張圖片，分為 ${dayBlocks.length} 個區塊`);
+    }
+
     parsedDynamicSheets.push({
       id: `sheet_${idx}_${Date.now()}`,
       name: sheetName,
       sheetType: detectedType,
       rawHeaders: cleaned.headers,
       rawRows: cleaned.rows,
+      ...(dayBlocks && dayBlocks.length > 0 ? { dayBlocks } : {}),
     });
   }
 
