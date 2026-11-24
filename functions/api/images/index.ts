@@ -30,9 +30,13 @@ export const onRequestPost: PagesFunction = async (context) => {
   const id = randomId();
   try {
     await env.TRIPS_KV.put(`img:${id}`, dataUrl);
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error saving image to KV:', e);
-    return jsonResponse({ success: false, error: '圖片儲存失敗' }, { status: 500 });
+    // 把 KV 的實際錯誤原因帶回去（例如每日寫入次數用完、binding 設定錯誤），方便判斷
+    return jsonResponse(
+      { success: false, error: `圖片儲存失敗：${String(e?.message || e).slice(0, 200)}` },
+      { status: 500 }
+    );
   }
   return jsonResponse({ success: true, id });
 };
