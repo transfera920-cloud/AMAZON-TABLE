@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import {
   PagesFunction,
   jsonResponse,
@@ -17,9 +18,9 @@ export const onRequestGet: PagesFunction = async (context) => {
   const memberIden = extractMemberIdentity(request);
 
   // Requirement 3: If KV has no trip: keys, automatically seed sample data
-  await seedTripsIfEmpty(env.TRIPS_KV);
+  await seedTripsIfEmpty(getStore(env));
 
-  const allTrips = await getAllTrips(env.TRIPS_KV);
+  const allTrips = await getAllTrips(getStore(env));
 
   if (isAdmin) {
     const summaries = allTrips.map(toTripSummary);
@@ -100,13 +101,13 @@ export const onRequestPost: PagesFunction = async (context) => {
   // Ensure unique tripId
   let tripId = trip.tripId || trip.id;
   if (!tripId || tripId.startsWith('exp_')) {
-    const all = await getAllTrips(env.TRIPS_KV);
+    const all = await getAllTrips(getStore(env));
     tripId = `TRIP-${String(all.length + 1).padStart(3, '0')}`;
   }
   trip.tripId = tripId;
   trip.id = tripId;
 
-  const success = await saveTrip(env.TRIPS_KV, trip);
+  const success = await saveTrip(getStore(env), trip);
   if (success) {
     return jsonResponse({
       success: true,

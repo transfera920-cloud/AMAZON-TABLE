@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import {
   PagesFunction,
   jsonResponse,
@@ -15,7 +16,7 @@ export const onRequestPost: PagesFunction = async (context) => {
   }
 
   try {
-    await resetTrips(env.TRIPS_KV);
+    await resetTrips(getStore(env));
     return jsonResponse({
       success: true,
       message: '團務系統已重設為標準三團測試範例',

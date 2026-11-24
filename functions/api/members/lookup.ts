@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import {
   PagesFunction,
   jsonResponse,
@@ -33,7 +34,7 @@ const handleLookup: PagesFunction = async (context) => {
     );
   }
 
-  const result = await lookupMemberTrips(env.TRIPS_KV, name, disambiguateKey);
+  const result = await lookupMemberTrips(getStore(env), name, disambiguateKey);
 
   if (!result.found) {
     return jsonResponse(

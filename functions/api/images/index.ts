@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import { PagesFunction, jsonResponse, checkIsAdmin } from '../../lib/tripsStore';
 
 const MAX_DATAURL_LENGTH = 1_500_000; // 單張圖片（base64 字串）上限約 1.5MB
@@ -29,7 +30,7 @@ export const onRequestPost: PagesFunction = async (context) => {
   }
   const id = randomId();
   try {
-    await env.TRIPS_KV.put(`img:${id}`, dataUrl);
+    await getStore(env).put(`img:${id}`, dataUrl);
   } catch (e: any) {
     console.error('Error saving image to KV:', e);
     // 把 KV 的實際錯誤原因帶回去（例如每日寫入次數用完、binding 設定錯誤），方便判斷

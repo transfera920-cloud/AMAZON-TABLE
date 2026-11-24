@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import { PagesFunction, jsonResponse } from '../../lib/tripsStore';
 
 /** GET /api/images/:id：回傳圖片本體（網址為不可猜的隨機 ID，可長期快取） */
@@ -7,7 +8,7 @@ export const onRequestGet: PagesFunction = async (context) => {
   if (!/^[0-9a-f]{24}$/.test(id)) {
     return jsonResponse({ success: false, error: '圖片不存在' }, { status: 404 });
   }
-  const raw = await env.TRIPS_KV.get(`img:${id}`);
+  const raw = await getStore(env).get(`img:${id}`);
   const m = raw ? raw.match(/^data:(image\/[a-z]+);base64,(.*)$/s) : null;
   if (!m) {
     return jsonResponse({ success: false, error: '圖片不存在' }, { status: 404 });

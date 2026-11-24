@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import { PagesFunction, jsonResponse } from '../../lib/tripsStore';
 import { verifyAdminCredentials, issueAdminToken } from '../../lib/adminAuth';
 
@@ -11,7 +12,7 @@ export const onRequestPost: PagesFunction = async (context) => {
   const rlKey = `rl:login:${ip}`;
   let attempts = 0;
   try {
-    attempts = parseInt((await env.TRIPS_KV.get(rlKey)) || '0', 10) || 0;
+    attempts = parseInt((await getStore(env).get(rlKey)) || '0', 10) || 0;
   } catch {
     // KV 失敗時不阻擋，但仍會驗證帳密
   }
@@ -32,7 +33,7 @@ export const onRequestPost: PagesFunction = async (context) => {
   const ok = await verifyAdminCredentials(env, body?.username, body?.password);
   if (!ok) {
     try {
-      await env.TRIPS_KV.put(rlKey, String(attempts + 1), { expirationTtl: WINDOW_SECONDS });
+      await getStore(env).put(rlKey, String(attempts + 1), { expirationTtl: WINDOW_SECONDS });
     } catch {
       // ignore
     }
@@ -40,7 +41,7 @@ export const onRequestPost: PagesFunction = async (context) => {
   }
 
   try {
-    await env.TRIPS_KV.delete(rlKey);
+    await getStore(env).delete(rlKey);
   } catch {
     // ignore
   }

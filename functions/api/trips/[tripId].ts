@@ -1,3 +1,4 @@
+import { getStore } from '../../lib/d1Store';
 import {
   PagesFunction,
   jsonResponse,
@@ -13,7 +14,7 @@ import {
 export const onRequestGet: PagesFunction = async (context) => {
   const { request, env, params } = context;
   const tripId = params.tripId as string;
-  const trip = await getTrip(env.TRIPS_KV, tripId);
+  const trip = await getTrip(getStore(env), tripId);
 
   if (!trip) {
     return jsonResponse(
@@ -83,7 +84,7 @@ export const onRequestPut: PagesFunction = async (context) => {
   trip.tripId = tripId;
   trip.id = tripId;
 
-  const success = await saveTrip(env.TRIPS_KV, trip);
+  const success = await saveTrip(getStore(env), trip);
   if (success) {
     return jsonResponse({
       success: true,
@@ -109,7 +110,7 @@ export const onRequestDelete: PagesFunction = async (context) => {
   }
 
   const tripId = params.tripId as string;
-  const success = await deleteTrip(env.TRIPS_KV, tripId);
+  const success = await deleteTrip(getStore(env), tripId);
   if (success) {
     return jsonResponse({
       success: true,
