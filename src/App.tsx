@@ -204,7 +204,7 @@ export default function App() {
         body: JSON.stringify({ trip: planToSave }),
       });
 
-      const data = await res.json();
+      const data: any = await res.json().catch(() => ({}));
       if (data.success) {
         setIsCloudSynced(true);
         fetchTripsList();
@@ -217,10 +217,14 @@ export default function App() {
         setIsAdminAuthenticated(false);
         setIsAdminMode(false);
         showToast('管理員登入已過期，請重新登入。');
+      } else {
+        // 儲存失敗：明確提示，避免電腦看得到、手機（讀伺服器）卻看不到卻不知道原因
+        showToast(`⚠️ 儲存到伺服器失敗（HTTP ${res.status}）：${data?.error || '請稍後重試'}。其他裝置將看不到最新內容。`);
       }
     } catch (e) {
       console.error('Failed to sync trip to server:', e);
       setIsCloudSynced(false);
+      showToast('⚠️ 儲存到伺服器失敗（網路或資料過大）。其他裝置將看不到最新內容。');
     }
   };
 

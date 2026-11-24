@@ -85,8 +85,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Center (TITLE 正中間): 紅框內容拿掉，留下該行文字並自動排版 */}
-          <div className="flex items-center justify-center text-center w-full md:max-w-2xl px-2">
+          {/* Center: 前台不顯示（與分頁按鈕資訊重複），僅後台保留供編輯說明文字 */}
+          <div className={`items-center justify-center text-center w-full md:max-w-2xl px-2 ${isAdminMode ? 'flex' : 'hidden'}`}>
             {isEditingTitle && isAdminMode ? (
               /* 後台編輯模式：直接修改此行說明文字 */
               <form onSubmit={handleSaveTitle} className="w-full max-w-lg bg-slate-900/95 border border-amber-500/60 rounded-2xl p-2.5 shadow-xl space-y-2">
