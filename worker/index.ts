@@ -6,6 +6,8 @@ import {
   onRequestPut as tripIdPut,
   onRequestDelete as tripIdDelete,
 } from '../functions/api/trips/[tripId]';
+import { onRequestPost as imagesPost } from '../functions/api/images/index';
+import { onRequestGet as imageGet } from '../functions/api/images/[id]';
 import { onRequestPost as tripsResetPost } from '../functions/api/trips/reset';
 import { onRequestPost as adminLoginPost } from '../functions/api/admin/login';
 import { Env as TripsEnv } from '../functions/lib/tripsStore';
@@ -98,6 +100,21 @@ async function handle(request: Request, env: Env, ctx?: any): Promise<Response> 
 
       if (apiSubpath === '/api/members/lookup') {
         return memberLookup(createEventContext(request, env, {}, ctx));
+      }
+
+      if (apiSubpath === '/api/images') {
+        if (method === 'POST') {
+          return imagesPost(createEventContext(request, env, {}, ctx));
+        }
+        return new Response('Method Not Allowed', { status: 405 });
+      }
+
+      const imageMatch = apiSubpath.match(/^\/api\/images\/([^/]+)$/);
+      if (imageMatch) {
+        if (method === 'GET') {
+          return imageGet(createEventContext(request, env, { id: decodeURIComponent(imageMatch[1]) }, ctx));
+        }
+        return new Response('Method Not Allowed', { status: 405 });
       }
 
       if (apiSubpath === '/api/trips/reset') {

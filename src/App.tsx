@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { initialExpeditionData } from './data/defaultExpedition';
-import { ExpeditionPlan, TripSummary, MemberIdentity } from './types';
+import { ExpeditionPlan, TripSummary, MemberIdentity, DynamicSheet } from './types';
 import { Header } from './components/Header';
 import { FrontendView } from './components/FrontendView';
 import { BackendView } from './components/BackendView';
@@ -253,6 +253,56 @@ export default function App() {
       }
     };
   }, [plan, currentTripId, isAdminAuthenticated, isAdminMode]);
+
+  // 把 plan 內 dataURL 圖片上傳到伺服器，換成圖片網址（失敗回傳 null）
+  const externalizeImages = async (planIn: ExpeditionPlan): Promise<ExpeditionPlan | null> => {
+    const sheets = planIn.sheets || [];
+    const total = sheets.reduce(
+      (n, sh) => n + (sh.dayBlocks || []).reduce((m, b) => m + b.images.filter(u => u.startsWith('data:')).length, 0),
+      0
+    );
+    if (total === 0) return planIn;
+    let done = 0;
+    showToast(`上傳圖片中… 0/${total}`);
+    const newSheets: DynamicSheet[] = [];
+    for (const sh of sheets) {
+      if (!sh.dayBlocks) {
+        newSheets.push(sh);
+        continue;
+      }
+      const newBlocks: { label: string; images: string[] }[] = [];
+      for (const b of sh.dayBlocks) {
+        const urls: string[] = [];
+        for (const u of b.images) {
+          if (!u.startsWith('data:')) {
+            urls.push(u);
+            continue;
+          }
+          try {
+            const res = await fetch(apiPath('/api/images'), {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ dataUrl: u }),
+            });
+            const data: any = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success || !data.id) {
+              showToast(`⚠️ 圖片上傳失敗（HTTP ${res.status}）：${data?.error || '請稍後重試'}，本次匯入已取消。`);
+              return null;
+            }
+            urls.push(apiPath(`/api/images/${data.id}`));
+            done++;
+            setToastMessage(`上傳圖片中… ${done}/${total}`);
+          } catch {
+            showToast('⚠️ 圖片上傳失敗（網路問題），本次匯入已取消。');
+            return null;
+          }
+        }
+        newBlocks.push({ ...b, images: urls });
+      }
+      newSheets.push({ ...sh, dayBlocks: newBlocks });
+    }
+    return { ...planIn, sheets: newSheets };
+  };
 
   const handleUpdatePlan = (newPlan: ExpeditionPlan) => {
     setPlan(newPlan);
@@ -523,7 +573,10 @@ export default function App() {
         onClose={() => setIsUploadModalOpen(false)}
         currentPlan={plan}
         trips={trips}
-        onApplyPlan={async (newPlan, isNewTrip) => {
+        onApplyPlan={async (rawPlan, isNewTrip) => {
+          // 圖片不跟團務資料存在一起：先逐張上傳，團務資料只留圖片網址
+          const newPlan = await externalizeImages(rawPlan);
+          if (!newPlan) return;
           if (isNewTrip) {
             await handleCreateTrip(newPlan);
           } else {
