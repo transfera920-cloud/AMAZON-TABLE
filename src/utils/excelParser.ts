@@ -173,15 +173,22 @@ export async function parseExcelFile(file: File, _previousPlan?: ExpeditionPlan)
 
   // SheetJS 讀不到浮動圖片，另外用 JSZip 從 xlsx 取出（失敗不影響文字資料匯入）
   let sheetImages: Record<string, { row: number; dataUrl: string }[]> = {};
+  let imageError = '';
   try {
     sheetImages = await extractSheetImages(data);
-  } catch (e) {
+  } catch (e: any) {
     console.warn('讀取 Excel 內嵌圖片失敗，略過圖片：', e);
+    imageError = e?.message || String(e);
   }
 
   // 1. Clean slate plan initialized from filename
   const newPlan: ExpeditionPlan = createEmptyPlan(file.name);
   const logs: string[] = [];
+  {
+    const totalImgs = Object.values(sheetImages).reduce((n, a) => n + a.length, 0);
+    if (imageError) logs.push(`圖片讀取失敗：${imageError}`);
+    else logs.push(`圖片讀取功能已啟用：共讀到 ${totalImgs} 張內嵌圖片${totalImgs === 0 ? '（此檔案沒有浮動圖片，或不是 .xlsx 格式）' : ''}`);
+  }
   const parsedDynamicSheets: DynamicSheet[] = [];
 
   for (let idx = 0; idx < sheetNames.length; idx++) {
